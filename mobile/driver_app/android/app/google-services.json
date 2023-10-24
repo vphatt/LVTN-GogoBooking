@@ -1,0 +1,87 @@
+{
+  "project_info": {
+    "project_number": "432655298375",
+    "firebase_url": "https://gogobooking-5ade1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "gogobooking-5ade1",
+    "storage_bucket": "gogobooking-5ade1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432655298375:android:a7cb8538cbeabbc568e662",
+        "android_client_info": {
+          "package_name": "com.example.driver_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432655298375:android:15ee798feff649fc68e662",
+        "android_client_info": {
+          "package_name": "com.example.user_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432655298375:android:73c68d3fe45d09b968e662",
+        "android_client_info": {
+          "package_name": "com.gogobooking.driver.driver_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432655298375:android:9c0d1f2d2fc2955968e662",
+        "android_client_info": {
+          "package_name": "com.gogobooking.user.user_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
