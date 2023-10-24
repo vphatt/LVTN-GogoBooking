@@ -2,7 +2,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:driver_app/pages/home_page.dart';
+import 'package:driver_app/pages/dashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -95,7 +95,7 @@ class SplashController extends GetxController {
       MaterialPageRoute(
           builder: (context) => FirebaseAuth.instance.currentUser == null
               ? const LoginScreen()
-              : const HomePage()),
+              : const Dashboard()),
     );
   }
 }
