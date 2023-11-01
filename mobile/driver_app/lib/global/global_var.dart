@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 String userNameGB = '';
@@ -11,3 +13,5 @@ const CameraPosition googleMapInitialPosition = CameraPosition(
   target: LatLng(9.614758, 105.973307),
   zoom: 15,
 );
+
+StreamSubscription<Position>? positionStreamHomePage;

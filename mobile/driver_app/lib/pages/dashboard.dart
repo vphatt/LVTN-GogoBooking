@@ -41,6 +41,7 @@ class _DashboardState extends State<Dashboard>
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
     return Scaffold(
       body: TabBarView(
         physics: const NeverScrollableScrollPhysics(),
@@ -63,7 +64,9 @@ class _DashboardState extends State<Dashboard>
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+          padding: EdgeInsets.symmetric(
+              horizontal: screenSize.width / 50,
+              vertical: screenSize.height / 60),
           child: GNav(
             haptic: true,
             //tabBorderRadius: 5,
@@ -73,7 +76,9 @@ class _DashboardState extends State<Dashboard>
             activeColor: MyColor.green,
             iconSize: 30,
             tabBackgroundColor: MyColor.green.withOpacity(0.2),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: EdgeInsets.symmetric(
+                horizontal: screenSize.width / 20,
+                vertical: screenSize.height / 70),
             tabs: const [
               GButton(
                 icon: Icons.home,

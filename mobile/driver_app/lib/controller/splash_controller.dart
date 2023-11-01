@@ -35,9 +35,9 @@ class SplashController extends GetxController {
           await Permission.location.request().isGranted &&
           await Permission.phone.request().isGranted) {
         //Thong bao
-        MyNotification.getFcmToken();
-        MyNotification.getMessageInBackground();
-        MyNotification.getMessageInForeground(context);
+        // MyNotification.getFcmToken();
+        // MyNotification.getMessageInBackground();
+        // MyNotification.getMessageInForeground(context);
         //Chạy man hinh
         _launchScreen(context);
       } else {
@@ -58,9 +58,9 @@ class SplashController extends GetxController {
           await Permission.location.request().isGranted &&
           await Permission.phone.request().isGranted) {
         //Thong bao
-        MyNotification.getFcmToken();
-        MyNotification.getMessageInBackground();
-        MyNotification.getMessageInForeground(context);
+        // MyNotification.getFcmToken();
+        // MyNotification.getMessageInBackground();
+        // MyNotification.getMessageInForeground(context);
         //Chạy man hinh
         _launchScreen(context);
       } else {
@@ -83,19 +83,14 @@ class SplashController extends GetxController {
   // }
 
   void _launchScreen(BuildContext context) {
-    // FirebaseAuth.instance.currentUser!.uid.isNotEmpty
-    //     ? Navigator.push(
-    //         context,
-    //         MaterialPageRoute(builder: (context) => const Dashboard()),
-    //       )
-
-    //     :
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => FirebaseAuth.instance.currentUser == null
-              ? const LoginScreen()
-              : const Dashboard()),
+          builder: (context) =>
+              //  FirebaseAuth.instance.currentUser == null
+              //     ? const LoginScreen()
+              //     :
+              const LoginScreen()),
     );
   }
 }
