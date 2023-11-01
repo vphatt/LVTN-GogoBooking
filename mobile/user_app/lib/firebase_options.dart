@@ -54,6 +54,7 @@ class DefaultFirebaseOptions {
     appId: '1:432655298375:android:15ee798feff649fc68e662',
     messagingSenderId: '432655298375',
     projectId: 'gogobooking-5ade1',
+    databaseURL: 'https://gogobooking-5ade1-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'gogobooking-5ade1.appspot.com',
   );
 
@@ -62,6 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:432655298375:ios:5bde606ec7129a3068e662',
     messagingSenderId: '432655298375',
     projectId: 'gogobooking-5ade1',
+    databaseURL: 'https://gogobooking-5ade1-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'gogobooking-5ade1.appspot.com',
     iosBundleId: 'com.example.userApp',
   );

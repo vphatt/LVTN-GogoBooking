@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -12,6 +12,8 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:user_app/authentication/login_screen.dart';
 import 'package:user_app/global/global_var.dart';
+import 'package:user_app/methods/driver_manager_method.dart';
+import 'package:user_app/models/active_nearby_driver_model.dart';
 import 'package:user_app/models/direction_model.dart';
 import 'package:user_app/pages/search_page.dart';
 import 'package:user_app/utils/app_info.dart';
@@ -65,6 +67,22 @@ class _HomePageState extends State<HomePage> {
   //Custom 2 icon điểm đầu và cuối
   BitmapDescriptor? startLocationMark;
   BitmapDescriptor? endLocationMark;
+  BitmapDescriptor? carDriverIcon;
+
+  //Kiểm tra các tài xế lân cận đã được tải chưa
+  bool activeNearbyDriverKeyLoad = false;
+
+  makeCarDriverIcon() {
+    if (carDriverIcon == null) {
+      ImageConfiguration imageConfiguration =
+          createLocalImageConfiguration(context, size: const Size(0.5, 0.5));
+      BitmapDescriptor.fromAssetImage(
+              imageConfiguration, "assets/images/car_icon.png")
+          .then((iconCar) {
+        carDriverIcon = iconCar;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -81,6 +99,8 @@ class _HomePageState extends State<HomePage> {
         .then((value) {
       endLocationMark = value;
     });
+
+    //makeCarDriverIcon();
   }
 
   //Key tạo drawer
@@ -100,7 +120,13 @@ class _HomePageState extends State<HomePage> {
     googleMapController!
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
 
+    // ignore: use_build_context_synchronously
+    await CommonMethods.convertCoordinateToAddress(
+        context, currentPositionOfUser!);
+
     await getUserInfoAndCheckBlockStatus();
+
+    await initializeGeofireListener();
   }
 
   //Kiem tra nguoi dung da dang nhap co bi block dot xuat boi admin khong
@@ -246,31 +272,6 @@ class _HomePageState extends State<HomePage> {
       markerSet.add(startPointMarker);
       markerSet.add(endPointMarker);
     });
-
-    //Tạo vòng tròn quanh điểm đầu
-    // Circle startPointCirle = Circle(
-    //   circleId: const CircleId("startCircleID"),
-    //   strokeColor: MyColor.rose,
-    //   strokeWidth: 4,
-    //   radius: 14,
-    //   center: startLatLng,
-    //   fillColor: MyColor.blue,
-    // );
-
-    // //Tạo vòng trònquanh điểm cuối
-    // Circle endPointCirle = Circle(
-    //   circleId: const CircleId("endCircleID"),
-    //   strokeColor: MyColor.rose,
-    //   strokeWidth: 4,
-    //   radius: 14,
-    //   center: endLatLng,
-    //   fillColor: MyColor.blue,
-    // );
-
-    // setState(() {
-    //   circleSet.add(startPointCirle);
-    //   circleSet.add(endPointCirle);
-    // });
   }
 
   //Huỷ thông tin đã chọn
@@ -312,9 +313,102 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  //hàm cập nhật tài xế trên bản đồ
+  updateActiveNearbyDriverOnMap() {
+    setState(() {
+      markerSet.clear();
+    });
+    Set<Marker> markers = <Marker>{};
+    for (ActiveNearbyDriverModel activeNearbyDriver
+        in DriverManagerMethod.activeNearbyDriverList) {
+      LatLng driverCurrentPosition =
+          LatLng(activeNearbyDriver.latDriver!, activeNearbyDriver.lngDriver!);
+
+      Marker driverMarker = Marker(
+        markerId: MarkerId("driver ID = ${activeNearbyDriver.uidDriver}"),
+        position: driverCurrentPosition,
+        icon: carDriverIcon!,
+      );
+
+      markers.add(driverMarker);
+    }
+
+    setState(() {
+      markerSet = markers;
+    });
+    print('HAM updateActiveNearbyDriverOnMap DA CHAYYYYYYY');
+  }
+
+  //Khởi tạo Geofire để cho việc hiện thị các tài xế lân cận
+  initializeGeofireListener() {
+    print("HAM initializeGeofireListener DA CHAYYYYY");
+    Geofire.initialize("driverActive");
+
+    //Đặt phạm vi bán kính tìm kiếm tài xế online là 20 km
+    Geofire.queryAtLocation(currentPositionOfUser!.latitude,
+            currentPositionOfUser!.longitude, 22)!
+        .listen((driverEvent) {
+      if (driverEvent != null) {
+        var driverActiveChild = driverEvent["callBack"];
+
+        switch (driverActiveChild) {
+          //Khi tài xế từ bên ngoài bán kinh di chuyển vào
+          case Geofire.onKeyEntered:
+            ActiveNearbyDriverModel activeNearbyDriverModel =
+                ActiveNearbyDriverModel();
+            activeNearbyDriverModel.uidDriver = driverEvent["key"];
+            activeNearbyDriverModel.latDriver = driverEvent["latitude"];
+            activeNearbyDriverModel.lngDriver = driverEvent["longitude"];
+            DriverManagerMethod.activeNearbyDriverList
+                .add(activeNearbyDriverModel);
+
+            //Kiểm tra tài xế được tải chưa
+            if (activeNearbyDriverKeyLoad == true) {
+              //Cập nhật tài xế trên bản đồ
+              updateActiveNearbyDriverOnMap();
+            }
+            break;
+
+          //Khi tài xế ngừng hoạt động
+          case Geofire.onKeyExited:
+            DriverManagerMethod.removeDriverFromList(driverEvent["key"]);
+
+            //Cập nhật tài xế trên bản đồ
+            updateActiveNearbyDriverOnMap();
+            break;
+
+          //Khi tài xế di chuyển trong phạm vi bán kính
+          case Geofire.onKeyMoved:
+            ActiveNearbyDriverModel activeNearbyDriverModel =
+                ActiveNearbyDriverModel();
+            activeNearbyDriverModel.uidDriver = driverEvent["key"];
+            activeNearbyDriverModel.latDriver = driverEvent["latitude"];
+            activeNearbyDriverModel.lngDriver = driverEvent["longitude"];
+            DriverManagerMethod.updateActiveNearbyDriverLocation(
+                activeNearbyDriverModel);
+
+            //Cập nhật tài xế trên bản đồ
+            updateActiveNearbyDriverOnMap();
+            break;
+
+          //Khi người dùng vừa mở app, các tài xế trong bán kính sẽ hiện thị
+          case Geofire.onGeoQueryReady:
+            activeNearbyDriverKeyLoad = true;
+
+            //Cập nhật tài xế trên bản đồ
+            updateActiveNearbyDriverOnMap();
+
+            //Hiện thị các tài xế hoạt động gần nhất
+            break;
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     //final screenSize = MediaQuery.of(context).size;
+    makeCarDriverIcon();
     return SafeArea(
       child: Scaffold(
           key: gbKey,
@@ -538,7 +632,7 @@ class _HomePageState extends State<HomePage> {
                 right: 0,
                 bottom: 0,
                 child: Container(
-                  height: 300, //tripDetailHeight,
+                  height: tripDetailHeight,
                   decoration: const BoxDecoration(
                     color: MyColor.white,
                     borderRadius: BorderRadius.only(
@@ -627,7 +721,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              CircleAvatar(
+                              const CircleAvatar(
                                 radius: 50,
                                 backgroundImage:
                                     AssetImage("assets/images/driver.png"),

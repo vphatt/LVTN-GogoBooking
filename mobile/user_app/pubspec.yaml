@@ -51,6 +51,7 @@ dependencies:
   intl: ^0.18.1 #định dạng số
   flutter_polyline_points: ^2.0.0 #Vẽ đường đi trên bản đồ
   loading_animation_widget: ^1.2.0+4 #hiệu ứng loading
+  flutter_geofire: ^2.0.3 #theo dõi vị trí theo thời gian thực
 
 dev_dependencies:
   flutter_test:

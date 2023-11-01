@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:user_app/methods/common_methods.dart';
+import 'package:user_app/pages/home_page.dart';
 
 import '../authentication/login_screen.dart';
 import '../utils/my_notification.dart';
@@ -82,7 +83,7 @@ class SplashController extends GetxController {
   // }
 
   void _launchScreen(BuildContext context) {
-    print("UID USER: ${FirebaseAuth.instance.currentUser!.uid}");
+    //print("UID USER: ${FirebaseAuth.instance.currentUser!.uid}");
     // FirebaseAuth.instance.currentUser!.uid.isNotEmpty
     //     ? Navigator.push(
     //         context,
@@ -91,7 +92,12 @@ class SplashController extends GetxController {
     //     :
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(
+          builder: (context) =>
+              // FirebaseAuth.instance.currentUser!.uid.isNotEmpty
+              //     ? const HomePage()
+              //     :
+              const LoginScreen()),
     );
   }
 }
