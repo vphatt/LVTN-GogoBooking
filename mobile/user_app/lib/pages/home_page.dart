@@ -10,9 +10,11 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:restart_app/restart_app.dart';
 import 'package:user_app/authentication/login_screen.dart';
 import 'package:user_app/global/global_var.dart';
 import 'package:user_app/methods/driver_manager_method.dart';
+import 'package:user_app/methods/push_notification_methods.dart';
 import 'package:user_app/models/active_nearby_driver_model.dart';
 import 'package:user_app/models/direction_model.dart';
 import 'package:user_app/pages/search_page.dart';
@@ -297,6 +299,8 @@ class _HomePageState extends State<HomePage> {
       driverCarDetail = "";
       driverArriving = "Tài xế đang đến";
     });
+
+    Restart.restartApp();
   }
 
   //Hộp thoại yêu cầu xe
@@ -480,15 +484,47 @@ class _HomePageState extends State<HomePage> {
     var nearestSelectedDriver = activeNearbyDriverList![0];
 
     //gửi thông báo đến tài xế gần nhất được chọn
+    sendNotificationToDriverDevice(nearestSelectedDriver);
 
     //Xoá tài xế đó khỏi danh sách sau khi gửi thông báo
     activeNearbyDriverList!.removeAt(0);
   }
 
+  //Hàm gửi thông báo đến thiết bị của tài xế được chọn gần nhất
+  sendNotificationToDriverDevice(
+      ActiveNearbyDriverModel nearestSelectedDriver) {
+    //Cập nhật trang thái của tài xế khi có yêu cầu
+    DatabaseReference nearestSelectedDriverRef = FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(nearestSelectedDriver.uidDriver.toString())
+        .child("newTripStatus");
+    nearestSelectedDriverRef.set(tripRequestRef!.key);
+
+    //Lấy token của thiết bị mà tài xế đang đăng nhập
+    DatabaseReference tokenNearestSelectedDriverRef = FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(nearestSelectedDriver.uidDriver.toString())
+        .child("deviceToken");
+
+    tokenNearestSelectedDriverRef.once().then((dataSnapshot) {
+      if (dataSnapshot.snapshot.value != null) {
+        String deviceToken = dataSnapshot.snapshot.value.toString();
+
+        //Gửi thống báo đến tài xế
+        PushNotificationMethods.sendNotificationToNearestSelectedDriver(
+            context, deviceToken, tripRequestRef!.key.toString());
+      } else {
+        return;
+      }
+    });
+  }
+
   noDriverForTrip() {
     showDialog(
       context: context,
-      builder: (BuildContext context) => InfoDialog(
+      builder: (BuildContext context) => const InfoDialog(
         title: "Không tìm thấy tài xế",
         description:
             "Xin lỗi! Không có tài xế cho chuyến của bạn\nHãy thử lại sau ít phút nhé!",
