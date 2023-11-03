@@ -72,6 +72,9 @@ class _HomePageState extends State<HomePage> {
   //Kiểm tra các tài xế lân cận đã được tải chưa
   bool activeNearbyDriverKeyLoad = false;
 
+  //Biến truy xuất thông tin của YÊU CẦU ĐẶT XE
+  DatabaseReference? tripRequestRef;
+
   makeCarDriverIcon() {
     if (carDriverIcon == null) {
       ImageConfiguration imageConfiguration =
@@ -142,7 +145,10 @@ class _HomePageState extends State<HomePage> {
         //Kiem tra tai khoan co bi khoa khong
         if ((snap.snapshot.value as Map)["blockStatus"] == 'no') {
           //lấy tên của người dùng đã đăng nhập
-          userNameGB = (snap.snapshot.value as Map)['name'];
+          setState(() {
+            userNameGB = (snap.snapshot.value as Map)['name'];
+            userPhoneGB = (snap.snapshot.value as Map)['phone'];
+          });
         } else {
           FirebaseAuth.instance.signOut();
           Navigator.push(
@@ -199,6 +205,7 @@ class _HomePageState extends State<HomePage> {
       tripDirectionDetail = directionDetail;
     });
 
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);
 
     //Vẽ đường đi
@@ -208,9 +215,9 @@ class _HomePageState extends State<HomePage> {
 
     polylineLatLng.clear();
     if (pointLatLngList.isNotEmpty) {
-      pointLatLngList.forEach((PointLatLng pointLatLng) {
+      for (var pointLatLng in pointLatLngList) {
         polylineLatLng.add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
-      });
+      }
     }
 
     polylineSet.clear();
@@ -303,10 +310,68 @@ class _HomePageState extends State<HomePage> {
     });
 
     //Gửi yêu cầu đặt chuyến
+    sendTripRequest();
+  }
+
+  sendTripRequest() {
+    //Tạo một truy xuất csdl mới đặt tên là tripRequest
+    tripRequestRef =
+        FirebaseDatabase.instance.ref().child("tripRequests").push();
+
+    //Các thông tin cho tripRequest
+    var startLocation =
+        Provider.of<AppInfo>(context, listen: false).startLocation;
+    var endLocation = Provider.of<AppInfo>(context, listen: false).endLocation;
+
+    //Toạ độ điểm đầu
+    Map startLatLngMap = {
+      "latitude": startLocation!.latitude.toString(),
+      "longitude": startLocation.longitude.toString(),
+    };
+
+    //Toạ độ điểm cuối
+    Map endLatLngMap = {
+      "latitude": endLocation!.latitude.toString(),
+      "longitude": endLocation.longitude.toString(),
+    };
+
+    //Toạ độ của tài xế
+    Map driverLatLngMap = {
+      "latitude": "",
+      "longitude": "",
+    };
+
+    Map dataMap = {
+      "tripId": tripRequestRef!.key,
+      "userId": userIdGB,
+      "requestDateTime": DateTime.now().toString(),
+      "userName": userNameGB,
+      "userPhone": userPhoneGB,
+      "startLatLng": startLatLngMap,
+      "endLatLng": endLatLngMap,
+      "startAddress": startLocation.addressName,
+      "endAddress": endLocation.addressName,
+      "tripAmount": "",
+
+      //tình trạng: khởi tạo, đang thực hiện và đã hoàn thành,...
+      "status": "initial",
+
+      //Thông tin tài xế sẽ được cập nhật sau khi tài xế chấp nhận
+      "driverId": "waiting",
+      "driverName": "",
+      "driverPhone": "",
+      "driverAvt": "",
+      "carDetail": "",
+      "driverLocation": driverLatLngMap,
+    };
+
+    tripRequestRef!.set(dataMap);
   }
 
   //Huỷ yêu cầu
   cancelRequest() {
+    //Xoá thông tin yêu cầu khỏi csdl
+    tripRequestRef!.remove();
     setState(() {
       stateOfTrip = "normal";
       requestBoxHeight = 0;
@@ -336,12 +401,10 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       markerSet = markers;
     });
-    print('HAM updateActiveNearbyDriverOnMap DA CHAYYYYYYY');
   }
 
   //Khởi tạo Geofire để cho việc hiện thị các tài xế lân cận
   initializeGeofireListener() {
-    print("HAM initializeGeofireListener DA CHAYYYYY");
     Geofire.initialize("driverActive");
 
     //Đặt phạm vi bán kính tìm kiếm tài xế online là 20 km
@@ -849,6 +912,7 @@ class _HomePageState extends State<HomePage> {
                         RawMaterialButton(
                           onPressed: () {
                             //Huỷ yêu cầu
+                            cancelDetail();
                             cancelRequest();
                           },
                           elevation: 2.0,

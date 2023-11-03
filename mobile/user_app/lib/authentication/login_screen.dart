@@ -80,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
           if ((snap.snapshot.value as Map)["blockStatus"] == 'no') {
             //lấy tên của người dùng đã đăng nhập
             userNameGB = (snap.snapshot.value as Map)['name'];
+            userPhoneGB = (snap.snapshot.value as Map)['phone'];
             Navigator.push(
                 context,
                 MaterialPageRoute(

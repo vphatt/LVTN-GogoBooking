@@ -94,10 +94,9 @@ class SplashController extends GetxController {
       context,
       MaterialPageRoute(
           builder: (context) =>
-              // FirebaseAuth.instance.currentUser!.uid.isNotEmpty
-              //     ? const HomePage()
-              //     :
-              const LoginScreen()),
+              FirebaseAuth.instance.currentUser!.uid.isNotEmpty
+                  ? const HomePage()
+                  : const LoginScreen()),
     );
   }
 }
