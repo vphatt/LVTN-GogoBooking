@@ -18,6 +18,7 @@ import 'package:user_app/models/direction_model.dart';
 import 'package:user_app/pages/search_page.dart';
 import 'package:user_app/utils/app_info.dart';
 import 'package:user_app/utils/my_color.dart';
+import 'package:user_app/widgets/info_dialog.dart';
 
 import '../controller/splash_controller.dart';
 import '../global/trip_var.dart';
@@ -75,17 +76,8 @@ class _HomePageState extends State<HomePage> {
   //Biến truy xuất thông tin của YÊU CẦU ĐẶT XE
   DatabaseReference? tripRequestRef;
 
-  makeCarDriverIcon() {
-    if (carDriverIcon == null) {
-      ImageConfiguration imageConfiguration =
-          createLocalImageConfiguration(context, size: const Size(0.5, 0.5));
-      BitmapDescriptor.fromAssetImage(
-              imageConfiguration, "assets/images/car_icon.png")
-          .then((iconCar) {
-        carDriverIcon = iconCar;
-      });
-    }
-  }
+  //Biến lưu danh sách các tài xế lân cận
+  List<ActiveNearbyDriverModel>? activeNearbyDriverList;
 
   @override
   void initState() {
@@ -96,6 +88,7 @@ class _HomePageState extends State<HomePage> {
         .then((value) {
       startLocationMark = value;
     });
+
     //Gán icon điểm cuối
     BitmapDescriptor.fromAssetImage(
             const ImageConfiguration(), 'assets/images/endhererz.png')
@@ -103,7 +96,12 @@ class _HomePageState extends State<HomePage> {
       endLocationMark = value;
     });
 
-    //makeCarDriverIcon();
+    //Gán icon xe
+    BitmapDescriptor.fromAssetImage(
+            const ImageConfiguration(), "assets/images/car_icon.png")
+        .then((iconCar) {
+      carDriverIcon = iconCar;
+    });
   }
 
   //Key tạo drawer
@@ -309,10 +307,11 @@ class _HomePageState extends State<HomePage> {
       bottomMapPadding = 100;
     });
 
-    //Gửi yêu cầu đặt chuyến
+    //Gửi yêu cầu đặt xe
     sendTripRequest();
   }
 
+  //Hàm Gửi yêu cầu đặt xe
   sendTripRequest() {
     //Tạo một truy xuất csdl mới đặt tên là tripRequest
     tripRequestRef =
@@ -409,7 +408,7 @@ class _HomePageState extends State<HomePage> {
 
     //Đặt phạm vi bán kính tìm kiếm tài xế online là 20 km
     Geofire.queryAtLocation(currentPositionOfUser!.latitude,
-            currentPositionOfUser!.longitude, 22)!
+            currentPositionOfUser!.longitude, 20)!
         .listen((driverEvent) {
       if (driverEvent != null) {
         var driverActiveChild = driverEvent["callBack"];
@@ -468,10 +467,37 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  //Tìm tài xế cho chuyến đi
+  searchDriverForTrip() {
+    if (activeNearbyDriverList!.isEmpty) {
+      cancelRequest();
+      cancelDetail();
+      noDriverForTrip();
+      return;
+    }
+
+    //Tài xế gần nhất được chọn
+    var nearestSelectedDriver = activeNearbyDriverList![0];
+
+    //gửi thông báo đến tài xế gần nhất được chọn
+
+    //Xoá tài xế đó khỏi danh sách sau khi gửi thông báo
+    activeNearbyDriverList!.removeAt(0);
+  }
+
+  noDriverForTrip() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => InfoDialog(
+        title: "Không tìm thấy tài xế",
+        description:
+            "Xin lỗi! Không có tài xế cho chuyến của bạn\nHãy thử lại sau ít phút nhé!",
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    //final screenSize = MediaQuery.of(context).size;
-    makeCarDriverIcon();
     return SafeArea(
       child: Scaffold(
           key: gbKey,
@@ -851,9 +877,12 @@ class _HomePageState extends State<HomePage> {
                               //Hiện thị hộp thoại khi người dùng click yêu cầu
                               showRequestBox();
 
-                              //Tìm tài xế gần nhất
+                              //Lấy danh sach cac tai xe lan can trong ban kinh 20km
+                              activeNearbyDriverList =
+                                  DriverManagerMethod.activeNearbyDriverList;
 
-                              //Tìm xài xế nếu tài xế đầu tiên từ chối
+                              //Tìm tài xế cho chuyến đi
+                              searchDriverForTrip();
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(16),

@@ -5,6 +5,7 @@ class MyColor {
   static const black = Colors.black;
   static const black54 = Colors.black54;
   static const yellow = Colors.yellow;
+  static const transparent = Colors.transparent;
   static const rose = Color.fromARGB(255, 245, 116, 107);
   static const blue = Color.fromARGB(255, 10, 50, 232);
   static const red = Color.fromARGB(255, 176, 32, 32);
