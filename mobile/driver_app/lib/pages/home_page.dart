@@ -13,6 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../authentication/login_screen.dart';
 import '../global/global_var.dart';
 import '../methods/common_methods.dart';
+import '../widgets/notification_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -158,7 +159,7 @@ class _HomePageState extends State<HomePage> {
   initializePushNotification() {
     PushNotification pushNotification = PushNotification();
     pushNotification.generateDeviceToken();
-    pushNotification.startListeningForNewNotification();
+    pushNotification.startListeningForNewNotification(context);
   }
 
   @override
@@ -178,7 +179,8 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(vertical: 100),
           mapType: MapType.normal,
           myLocationEnabled: true,
-          initialCameraPosition: googleMapInitialPosition,
+          initialCameraPosition:
+              CameraPosition(target: initialCurrentDriverLatLng!, zoom: 15),
           onMapCreated: (GoogleMapController mapController) {
             googleMapController = mapController;
             completerGoogleMapController.complete(googleMapController);

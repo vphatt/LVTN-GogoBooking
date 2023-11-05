@@ -1,6 +1,13 @@
+import 'package:driver_app/models/trip_detail_model.dart';
+import 'package:driver_app/widgets/loading_dialog.dart';
+import 'package:driver_app/widgets/notification_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+import 'my_color.dart';
 
 class PushNotification {
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
@@ -21,8 +28,8 @@ class PushNotification {
     firebaseMessaging.subscribeToTopic("users");
   }
 
-  //Lang nghe thong bao moi
-  startListeningForNewNotification() async {
+  //Đợi thông báo mới
+  startListeningForNewNotification(BuildContext context) async {
     ///3 truong hop thong bao
     ///--1. Terminated: Khi ung dung dong
     FirebaseMessaging.instance
@@ -30,6 +37,9 @@ class PushNotification {
         .then((RemoteMessage? remoteMessage) {
       if (remoteMessage != null) {
         String tripId = remoteMessage.data["tripId"];
+
+        //Nhận thông tin của yêu cầu chuyến đi
+        retrieveTripRequestInfo(context, tripId);
       }
     });
 
@@ -37,6 +47,9 @@ class PushNotification {
     FirebaseMessaging.onMessage.listen((RemoteMessage? remoteMessage) {
       if (remoteMessage != null) {
         String tripId = remoteMessage.data["tripId"];
+
+        //Nhận thông tin của yêu cầu chuyến đi
+        retrieveTripRequestInfo(context, tripId);
       }
     });
 
@@ -44,7 +57,74 @@ class PushNotification {
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage? remoteMessage) {
       if (remoteMessage != null) {
         String tripId = remoteMessage.data["tripId"];
+
+        //Nhận thông tin của yêu cầu chuyến đi
+        retrieveTripRequestInfo(context, tripId);
       }
+    });
+  }
+
+  //Nhận thông tin từ yêu cầu mới
+  retrieveTripRequestInfo(BuildContext context, String tripId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) =>
+          LoadingDialog(messageText: "Đang lấy thông tin..."),
+    );
+
+    DatabaseReference tripRequestRef =
+        FirebaseDatabase.instance.ref().child("tripRequests").child(tripId);
+
+    tripRequestRef.once().then((dataSnapshot) {
+      Navigator.pop(context);
+
+      //Âm thanh thông báo
+
+      ///Lấy thông tin yêu cầu
+      TripDetailModel tripDetailModel = TripDetailModel();
+
+      ///Thông tin điểm đón
+      double startLat = double.parse(
+          (dataSnapshot.snapshot.value! as Map)["startLatLng"]["latitude"]);
+      double startLng = double.parse(
+          (dataSnapshot.snapshot.value! as Map)["startLatLng"]["longitude"]);
+      tripDetailModel.startLatLng = LatLng(startLat, startLng);
+
+      tripDetailModel.startAddress =
+          (dataSnapshot.snapshot.value! as Map)["startAddress"];
+
+      ///Thông tin điểm cuối
+      double endLat = double.parse(
+          (dataSnapshot.snapshot.value! as Map)["endLatLng"]["latitude"]);
+      double endLng = double.parse(
+          (dataSnapshot.snapshot.value! as Map)["endLatLng"]["longitude"]);
+      tripDetailModel.endLatLng = LatLng(endLat, endLng);
+
+      tripDetailModel.endAddress =
+          (dataSnapshot.snapshot.value! as Map)["endAddress"];
+
+      ///Thông tin người yêu cầu
+      tripDetailModel.userName =
+          (dataSnapshot.snapshot.value! as Map)["userName"];
+      tripDetailModel.userPhone =
+          (dataSnapshot.snapshot.value! as Map)["userPhone"];
+
+      //Hiện log thông báo bên trong ứng dụng
+      showModalBottomSheet(
+        backgroundColor: MyColor.transparent,
+        context: context,
+        isDismissible: false,
+        builder: (BuildContext context) => Container(
+          child: Wrap(
+            children: [
+              NotificationDialog(
+                tripDetailModel: tripDetailModel,
+              )
+            ],
+          ),
+        ),
+      );
     });
   }
 }

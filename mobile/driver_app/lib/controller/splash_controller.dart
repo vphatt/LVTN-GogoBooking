@@ -2,15 +2,17 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:driver_app/global/global_var.dart';
 import 'package:driver_app/pages/dashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:driver_app/methods/common_methods.dart';
 
 import '../authentication/login_screen.dart';
-import '../utils/my_notification.dart';
 
 class SplashController extends GetxController {
   // var latitute = ''.obs;
@@ -81,16 +83,30 @@ class SplashController extends GetxController {
   //   }
   //   return await Geolocator.getCurrentPosition();
   // }
+  Position? currentPositionOfDriver;
 
-  void _launchScreen(BuildContext context) {
+  // getCurrentLocationDriver() async {
+  //   Position positionOfDriver = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.bestForNavigation);
+  //   currentPositionOfDriver = positionOfDriver;
+
+  //   currentDriverLatLng = LatLng(
+  //       currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
+  // }
+
+  void _launchScreen(BuildContext context) async {
+    Position positionOfDriver = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.bestForNavigation);
+    currentPositionOfDriver = positionOfDriver;
+
+    initialCurrentDriverLatLng = LatLng(
+        currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              //  FirebaseAuth.instance.currentUser == null
-              //     ? const LoginScreen()
-              //     :
-              const LoginScreen()),
+          builder: (context) => FirebaseAuth.instance.currentUser == null
+              ? const LoginScreen()
+              : const Dashboard()),
     );
   }
 }

@@ -15,3 +15,5 @@ const CameraPosition googleMapInitialPosition = CameraPosition(
 );
 
 StreamSubscription<Position>? positionStreamHomePage;
+
+LatLng? initialCurrentDriverLatLng;
