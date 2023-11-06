@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:driver_app/global/global_var.dart';
 import 'package:driver_app/models/trip_detail_model.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -35,18 +36,19 @@ class _NotificationDialogState extends State<NotificationDialog> {
   //Trạng thái của yêu cầu
   String tripRequestStatus = "initial";
 
-  //Huỷ thông báo sau 30s không phản hồi
-  int requestTimeOut = 30;
-  autoCancelNotificationDialogAfter30s() {
+  //Huỷ thông báo sau 28s không phản hồi
+  int requestTimeOut = 28;
+  autoCancelNotificationDialogAfter28s() {
     var countDown = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (tripRequestStatus == "accepted") {
         timer.cancel();
-        requestTimeOut = 30;
+        requestTimeOut = 28;
       }
       if (requestTimeOut == 0) {
         Navigator.pop(context);
         timer.cancel();
-        requestTimeOut = 30;
+        requestTimeOut = 28;
+        notificationSound.stop();
       } else {
         setState(() {
           requestTimeOut--;
@@ -57,7 +59,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
   @override
   void initState() {
-    autoCancelNotificationDialogAfter30s();
+    autoCancelNotificationDialogAfter28s();
     super.initState();
   }
 
@@ -284,6 +286,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   child: OutlinedButton(
                     onPressed: () {
                       Navigator.pop(context);
+                      notificationSound.stop();
                     },
                     style: OutlinedButton.styleFrom(
                         side: const BorderSide(
@@ -310,6 +313,8 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
+                      notificationSound.stop();
+
                       setState(() {
                         tripRequestStatus = "accepted";
                       });

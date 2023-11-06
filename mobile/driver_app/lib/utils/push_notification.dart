@@ -1,3 +1,4 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:driver_app/models/trip_detail_model.dart';
 import 'package:driver_app/widgets/loading_dialog.dart';
 import 'package:driver_app/widgets/notification_dialog.dart';
@@ -7,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../global/global_var.dart';
 import 'my_color.dart';
 
 class PushNotification {
@@ -80,6 +82,11 @@ class PushNotification {
       Navigator.pop(context);
 
       //Âm thanh thông báo
+      notificationSound.open(
+        Audio("assets/audios/newTripNotificationSound3.mp3"),
+      );
+
+      notificationSound.play();
 
       ///Lấy thông tin yêu cầu
       TripDetailModel tripDetailModel = TripDetailModel();
@@ -115,14 +122,12 @@ class PushNotification {
         backgroundColor: MyColor.transparent,
         context: context,
         isDismissible: false,
-        builder: (BuildContext context) => Container(
-          child: Wrap(
-            children: [
-              NotificationDialog(
-                tripDetailModel: tripDetailModel,
-              )
-            ],
-          ),
+        builder: (BuildContext context) => Wrap(
+          children: [
+            NotificationDialog(
+              tripDetailModel: tripDetailModel,
+            )
+          ],
         ),
       );
     });

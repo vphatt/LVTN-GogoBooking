@@ -13,7 +13,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../authentication/login_screen.dart';
 import '../global/global_var.dart';
 import '../methods/common_methods.dart';
-import '../widgets/notification_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -204,136 +203,149 @@ class _HomePageState extends State<HomePage> {
                       builder: (BuildContext context) {
                         return Container(
                           margin: const EdgeInsets.all(20),
-                          height: screenSize.height / 3.7,
+                          //height: screenSize.height / 3.7,
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: MyColor.white,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: screenSize.height / 50),
-                                  child: isDriverOnline == false
-                                      ? Text(
-                                          "ĐANG HOẠT ĐỘNG?",
-                                          style: TextStyle(
-                                              color: MyColor.green,
-                                              fontSize: screenSize.height / 40,
-                                              fontWeight: FontWeight.bold),
-                                        )
-                                      : Text(
-                                          "KHÔNG HOẠT ĐỘNG?",
-                                          style: TextStyle(
-                                              color: MyColor.red,
-                                              fontSize: screenSize.height / 40,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: screenSize.width / 50),
-                                  child: Text(
-                                    isDriverOnline == false
-                                        ? "Đặt trạng thái của bạn là \"ĐANG HOẠT ĐỘNG\".\nBạn sẽ nhận được các yêu cầu đặt xe từ những khách hàng gần nhất"
-                                        : "Đặt trạng thái của bạn là \"KHÔNG HOẠT ĐỘNG\".\nBạn sẽ không nhận được bất kỳ yêu cầu đặt xe nào trong thời gian này",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: screenSize.height / 60),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: screenSize.height / 50,
-                                      horizontal: screenSize.width / 30),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: MyColor.grey,
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          5))),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Text(
-                                              "HUỶ",
+                          child: Wrap(
+                            children: [
+                              Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: screenSize.height / 50),
+                                      child: isDriverOnline == false
+                                          ? Text(
+                                              "ĐANG HOẠT ĐỘNG?",
                                               style: TextStyle(
+                                                  color: MyColor.green,
                                                   fontSize:
-                                                      screenSize.height / 50,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: MyColor.white),
+                                                      screenSize.height / 40,
+                                                  fontWeight: FontWeight.bold),
+                                            )
+                                          : Text(
+                                              "KHÔNG HOẠT ĐỘNG?",
+                                              style: TextStyle(
+                                                  color: MyColor.red,
+                                                  fontSize:
+                                                      screenSize.height / 40,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: screenSize.width / 50),
+                                      child: Text(
+                                        isDriverOnline == false
+                                            ? "Đặt trạng thái của bạn là \"ĐANG HOẠT ĐỘNG\".\nBạn sẽ nhận được các yêu cầu đặt xe từ những khách hàng gần nhất"
+                                            : "Đặt trạng thái của bạn là \"KHÔNG HOẠT ĐỘNG\".\nBạn sẽ không nhận được bất kỳ yêu cầu đặt xe nào trong thời gian này",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            fontSize: screenSize.height / 60),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: screenSize.height / 50,
+                                          horizontal: screenSize.width / 30),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: MyColor.grey,
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5))),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                child: Text(
+                                                  "HUỶ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                          screenSize.height /
+                                                              50,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: MyColor.white),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: screenSize.width / 80,
-                                      ),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            if (isDriverOnline == false) {
-                                              //Bật trạng thái hoạt động
-                                              enableActiveStatus();
+                                          SizedBox(
+                                            width: screenSize.width / 80,
+                                          ),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                if (isDriverOnline == false) {
+                                                  //Bật trạng thái hoạt động
+                                                  enableActiveStatus();
 
-                                              //Lấy vị trí tài xế cập nhật theo thời gian thực
-                                              setAndGetLocationUpdate();
+                                                  //Lấy vị trí tài xế cập nhật theo thời gian thực
+                                                  setAndGetLocationUpdate();
 
-                                              Navigator.pop(context);
-                                              setState(() {
-                                                statusButtonColor =
-                                                    MyColor.green;
-                                                statusButtonTitle =
-                                                    "ĐANG HOẠT ĐỘNG";
-                                                isDriverOnline = true;
-                                              });
-                                            } else {
-                                              //Tắt trạng thái hoạt động
-                                              disableActiveStatus();
+                                                  Navigator.pop(context);
+                                                  setState(() {
+                                                    statusButtonColor =
+                                                        MyColor.green;
+                                                    statusButtonTitle =
+                                                        "ĐANG HOẠT ĐỘNG";
+                                                    isDriverOnline = true;
+                                                  });
+                                                } else {
+                                                  //Tắt trạng thái hoạt động
+                                                  disableActiveStatus();
 
-                                              Navigator.pop(context);
-                                              setState(() {
-                                                statusButtonColor = MyColor.red;
-                                                statusButtonTitle =
-                                                    "KHÔNG HOẠT ĐỘNG";
-                                                isDriverOnline = false;
-                                              });
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  isDriverOnline == false
-                                                      ? MyColor.green
-                                                      : MyColor.red,
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          5))),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Text(
-                                              "XÁC NHẬN",
-                                              style: TextStyle(
-                                                  fontSize:
-                                                      screenSize.height / 50,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: MyColor.white),
+                                                  Navigator.pop(context);
+                                                  setState(() {
+                                                    statusButtonColor =
+                                                        MyColor.red;
+                                                    statusButtonTitle =
+                                                        "KHÔNG HOẠT ĐỘNG";
+                                                    isDriverOnline = false;
+                                                  });
+                                                }
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      isDriverOnline == false
+                                                          ? MyColor.green
+                                                          : MyColor.red,
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              5))),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                child: Text(
+                                                  "XÁC NHẬN",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                          screenSize.height /
+                                                              50,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: MyColor.white),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                )
-                              ]),
+                                    )
+                                  ]),
+                            ],
+                          ),
                         );
                       });
                 },
