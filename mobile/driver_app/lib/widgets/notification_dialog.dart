@@ -22,32 +22,32 @@ class NotificationDialog extends StatefulWidget {
 
 class _NotificationDialogState extends State<NotificationDialog> {
   //Lấy vị trí hiện tại của tài xế
-  Position? currentPositionOfDriver;
+  // Position? currentPositionOfDriver;
 
-  getCurrentLocationDriver() async {
-    Position positionOfDriver = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.bestForNavigation);
-    currentPositionOfDriver = positionOfDriver;
+  // getCurrentLocationDriver() async {
+  //   Position positionOfDriver = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.bestForNavigation);
+  //   currentPositionOfDriver = positionOfDriver;
 
-    LatLng latLngPositionOfDriver = LatLng(
-        currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
-  }
+  //   LatLng latLngPositionOfDriver = LatLng(
+  //       currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
+  // }
 
   //Trạng thái của yêu cầu
   String tripRequestStatus = "initial";
 
-  //Huỷ thông báo sau 28s không phản hồi
-  int requestTimeOut = 28;
-  autoCancelNotificationDialogAfter28s() {
+  //Huỷ thông báo sau 30s không phản hồi
+  int requestTimeOut = 30;
+  autoCancelNotificationDialogAfter30s() {
     var countDown = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (tripRequestStatus == "accepted") {
         timer.cancel();
-        requestTimeOut = 28;
+        requestTimeOut = 30;
       }
       if (requestTimeOut == 0) {
         Navigator.pop(context);
         timer.cancel();
-        requestTimeOut = 28;
+        requestTimeOut = 30;
         notificationSound.stop();
       } else {
         setState(() {
@@ -59,7 +59,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
   @override
   void initState() {
-    autoCancelNotificationDialogAfter28s();
+    autoCancelNotificationDialogAfter30s();
     super.initState();
   }
 
@@ -106,7 +106,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 ),
                 const Spacer(),
                 Text(
-                  "30.000 đ",
+                  "${widget.tripDetailModel!.tripPrice} đ",
                   style: TextStyle(
                     color: MyColor.black,
                     fontSize: screenSize.height / 60,
@@ -128,18 +128,18 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 //Vị trí hiện tại của tài xế
                 TimelineTile(
                   nodePosition: 0.2,
-                  oppositeContents: Text(
-                    'Hiện tại ',
-                    style: TextStyle(
-                      color: MyColor.green,
-                      fontSize: screenSize.height / 70,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  // oppositeContents: Text(
+                  //   'Hiện tại ',
+                  //   style: TextStyle(
+                  //     color: MyColor.green,
+                  //     fontSize: screenSize.height / 70,
+                  //     fontWeight: FontWeight.bold,
+                  //   ),
+                  // ),
                   contents: Container(
                     padding: EdgeInsets.all(screenSize.height / 90),
                     child: Text(
-                      'contentssss',
+                      'Vị trí của bạn',
                       style: TextStyle(
                         color: MyColor.black,
                         fontSize: screenSize.height / 70,
@@ -218,16 +218,17 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 //Khoảng cách từ điểm đón khách đến điểm trả khách
                 TimelineTile(
                   nodePosition: 0.2,
-                  node: const TimelineNode(
+                  node: TimelineNode(
                     indicator: Card(
                       margin: EdgeInsets.zero,
                       child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text('6 km'),
+                        padding: const EdgeInsets.all(8.0),
+                        child:
+                            Text(widget.tripDetailModel!.distance.toString()),
                       ),
                     ),
-                    startConnector: DashedLineConnector(),
-                    endConnector: SolidLineConnector(),
+                    startConnector: const DashedLineConnector(),
+                    endConnector: const SolidLineConnector(),
                   ),
                 ),
 
@@ -296,11 +297,11 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5))),
                     child: Padding(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(1),
                       child: Text(
                         "TỪ CHỐI",
                         style: TextStyle(
-                            fontSize: screenSize.height / 60,
+                            fontSize: screenSize.height / 65,
                             fontWeight: FontWeight.bold,
                             color: MyColor.green),
                       ),
@@ -308,7 +309,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   ),
                 ),
                 const SizedBox(
-                  width: 10,
+                  width: 5,
                 ),
                 Expanded(
                   child: ElevatedButton(
@@ -324,11 +325,11 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5))),
                     child: Padding(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(1),
                       child: Text(
                         "CHẤP NHẬN ($requestTimeOut)",
                         style: TextStyle(
-                            fontSize: screenSize.height / 60,
+                            fontSize: screenSize.height / 65,
                             fontWeight: FontWeight.bold,
                             color: MyColor.white),
                       ),

@@ -83,7 +83,7 @@ class PushNotification {
 
       //Âm thanh thông báo
       notificationSound.open(
-        Audio("assets/audios/newTripNotificationSound3.mp3"),
+        Audio("assets/audios/newTripNotificationSound.mp3"),
       );
 
       notificationSound.play();
@@ -116,6 +116,10 @@ class PushNotification {
           (dataSnapshot.snapshot.value! as Map)["userName"];
       tripDetailModel.userPhone =
           (dataSnapshot.snapshot.value! as Map)["userPhone"];
+      tripDetailModel.distance =
+          (dataSnapshot.snapshot.value! as Map)["distance"];
+      tripDetailModel.tripPrice =
+          (dataSnapshot.snapshot.value! as Map)["tripAmount"];
 
       //Hiện log thông báo bên trong ứng dụng
       showModalBottomSheet(

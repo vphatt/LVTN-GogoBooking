@@ -8,6 +8,8 @@ class TripDetailModel {
   String? endAddress;
   LatLng? startLatLng;
   LatLng? endLatLng;
+  String? distance;
+  String? tripPrice;
 
   TripDetailModel({
     this.tripId,
@@ -17,5 +19,7 @@ class TripDetailModel {
     this.endAddress,
     this.startLatLng,
     this.endLatLng,
+    this.distance,
+    this.tripPrice,
   });
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:driver_app/controller/splash_controller.dart';
 import 'package:driver_app/utils/my_color.dart';
@@ -24,8 +23,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(statusBarColor: MyColor.white));
+    // SystemChrome.setSystemUIOverlayStyle(
+    //     const SystemUiOverlayStyle(statusBarColor: MyColor.white));
 
     return SafeArea(
       child: Scaffold(

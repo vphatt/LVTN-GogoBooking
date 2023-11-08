@@ -355,10 +355,11 @@ class _HomePageState extends State<HomePage> {
                         borderRadius: BorderRadius.circular(5))),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: screenSize.width / 60,
+                      horizontal: screenSize.width / 100,
                       vertical: screenSize.height / 60),
                   child: Text(
                     statusButtonTitle,
+                    maxLines: 1,
                     style: TextStyle(
                         fontSize: screenSize.height / 70,
                         fontWeight: FontWeight.bold,
