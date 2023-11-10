@@ -47,9 +47,12 @@ class _HomePageState extends State<HomePage> {
     Position positionOfDriver = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.bestForNavigation);
     currentPositionOfDriver = positionOfDriver;
+    driverCurrentPosition = currentPositionOfDriver;
 
     LatLng latLngPositionOfDriver = LatLng(
         currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
+    initialCurrentDriverLatLng = latLngPositionOfDriver;
+    driverCurrentLatLng = latLngPositionOfDriver;
 
     CameraPosition cameraPosition =
         CameraPosition(target: latLngPositionOfDriver, zoom: 15);
@@ -65,17 +68,17 @@ class _HomePageState extends State<HomePage> {
   //Kiem tra tai xe da dang nhap co bi block dot xuat boi admin khong
   getDriverInfoAndCheckBlockStatus() async {
     // ignore: deprecated_member_use
-    DatabaseReference usersRef = FirebaseDatabase(databaseURL: flutterURL)
+    DatabaseReference driversRef = FirebaseDatabase(databaseURL: flutterURL)
         .ref()
         .child('drivers')
         .child(FirebaseAuth.instance.currentUser!.uid);
 
-    await usersRef.once().then((snap) {
+    await driversRef.once().then((snap) {
       if (snap.snapshot.value != null) {
         //Kiem tra tai khoan co bi khoa khong
         if ((snap.snapshot.value as Map)["blockStatus"] == 'no') {
           //lấy tên của tai xe đã đăng nhập
-          userNameGB = (snap.snapshot.value as Map)['name'];
+          driverNameGB = (snap.snapshot.value as Map)['name'];
         } else {
           FirebaseAuth.instance.signOut();
           Navigator.push(
@@ -123,7 +126,8 @@ class _HomePageState extends State<HomePage> {
 
   //Lấy vị trí tài xế và cập nhật theo thời gian thực
   setAndGetLocationUpdate() {
-    Geolocator.getPositionStream().listen((Position position) {
+    positionStreamHomePage =
+        Geolocator.getPositionStream().listen((Position position) {
       currentPositionOfDriver = position;
 
       if (isDriverOnline == true) {
@@ -180,6 +184,7 @@ class _HomePageState extends State<HomePage> {
           myLocationEnabled: true,
           initialCameraPosition:
               CameraPosition(target: initialCurrentDriverLatLng!, zoom: 15),
+          // target: LatLng(10.032433897900804, 105.7576156559728), zoom: 15),
           onMapCreated: (GoogleMapController mapController) {
             googleMapController = mapController;
             completerGoogleMapController.complete(googleMapController);

@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../global/global_var.dart';
+import '../methods/common_methods.dart';
+import '../models/direction_model.dart';
 import 'my_color.dart';
 
 class PushNotification {
@@ -72,13 +74,13 @@ class PushNotification {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) =>
-          LoadingDialog(messageText: "Đang lấy thông tin..."),
+          LoadingDialog(messageText: "Có yêu cầu mới..."),
     );
 
     DatabaseReference tripRequestRef =
         FirebaseDatabase.instance.ref().child("tripRequests").child(tripId);
 
-    tripRequestRef.once().then((dataSnapshot) {
+    tripRequestRef.once().then((dataSnapshot) async {
       Navigator.pop(context);
 
       //Âm thanh thông báo
@@ -90,6 +92,9 @@ class PushNotification {
 
       ///Lấy thông tin yêu cầu
       TripDetailModel tripDetailModel = TripDetailModel();
+      //Biến lưu thông tin từ directionAPI
+
+      tripDetailModel.tripId = tripId;
 
       ///Thông tin điểm đón
       double startLat = double.parse(
@@ -116,10 +121,27 @@ class PushNotification {
           (dataSnapshot.snapshot.value! as Map)["userName"];
       tripDetailModel.userPhone =
           (dataSnapshot.snapshot.value! as Map)["userPhone"];
-      tripDetailModel.distance =
+      tripDetailModel.distanceFromStartToEnd =
           (dataSnapshot.snapshot.value! as Map)["distance"];
       tripDetailModel.tripPrice =
           (dataSnapshot.snapshot.value! as Map)["tripAmount"];
+
+      //Lấy khoảng cách từ tài xế đến điểm đón
+      LatLng? startLatLng = LatLng(startLat, startLng);
+      String? distanceFromDriverToStart = "";
+
+      var directionDetail = await CommonMethods.getDirectionDetailFromAPI(
+          driverCurrentLatLng!, startLatLng);
+      distanceFromDriverToStart = directionDetail!.distanceText.toString();
+
+      // getDistanceFromDriverToStart() async {
+      //   print("getDistanceFromDriverToStart ĐÃ THỰC THIIIIIIIIII");
+      //   var directionDetail = await CommonMethods.getDirectionDetailFromAPI(
+      //       driverCurrentLatLng!, startLatLng);
+      //   distanceFromDriverToStart = directionDetail!.distanceText.toString();
+      // }
+
+      tripDetailModel.distanceFromDriverToStart = distanceFromDriverToStart;
 
       //Hiện log thông báo bên trong ứng dụng
       showModalBottomSheet(

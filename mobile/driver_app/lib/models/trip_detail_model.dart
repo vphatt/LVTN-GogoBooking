@@ -4,11 +4,12 @@ class TripDetailModel {
   String? tripId;
   String? userName;
   String? userPhone;
+  String? distanceFromDriverToStart;
   String? startAddress;
   String? endAddress;
   LatLng? startLatLng;
   LatLng? endLatLng;
-  String? distance;
+  String? distanceFromStartToEnd;
   String? tripPrice;
 
   TripDetailModel({
@@ -19,7 +20,7 @@ class TripDetailModel {
     this.endAddress,
     this.startLatLng,
     this.endLatLng,
-    this.distance,
+    this.distanceFromStartToEnd,
     this.tripPrice,
   });
 }

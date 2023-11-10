@@ -1,12 +1,18 @@
 import 'dart:async';
 
 import 'package:driver_app/global/global_var.dart';
+import 'package:driver_app/methods/common_methods.dart';
 import 'package:driver_app/models/trip_detail_model.dart';
+import 'package:driver_app/pages/new_trip_page.dart';
+import 'package:driver_app/widgets/loading_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:timelines/timelines.dart';
 
+import '../models/direction_model.dart';
 import '../utils/my_color.dart';
 
 class NotificationDialog extends StatefulWidget {
@@ -35,6 +41,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
   //Trạng thái của yêu cầu
   String tripRequestStatus = "initial";
+  CommonMethods cMethods = CommonMethods();
 
   //Huỷ thông báo sau 30s không phản hồi
   int requestTimeOut = 30;
@@ -61,6 +68,56 @@ class _NotificationDialogState extends State<NotificationDialog> {
   void initState() {
     autoCancelNotificationDialogAfter30s();
     super.initState();
+  }
+
+  //KIểm tra tính khả dụng của chuyến đi
+  checkAvailabilityOfTripRequest(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) =>
+          LoadingDialog(messageText: "Vui lòng đợi..."),
+    );
+    DatabaseReference driverTripStatusRef = FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("newTripStatus");
+
+    await driverTripStatusRef.once().then((snap) {
+      //Đóng liên tiếp 2 dialog
+      Navigator.pop(context);
+      Navigator.pop(context);
+
+      String newTripStatusValue = "";
+      if (snap.snapshot.value != null) {
+        newTripStatusValue = snap.snapshot.value.toString();
+      } else {
+        cMethods.displaySnackbar("Không tìm thấy yêu cầu!", context);
+      }
+
+      if (newTripStatusValue == widget.tripDetailModel!.tripId) {
+        driverTripStatusRef.set("accepted");
+
+        ///Không cập nhật vị trí của tài xế tại trang chủ
+        cMethods.disableUpdateLocationDriver();
+
+        ///Sau khi chấp nhận yêu cầu, tài xế sẽ chuyển đến trang Chuyến đi
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (BuildContext context) =>
+                    NewTripPage(newTripDetailInfo: widget.tripDetailModel)));
+
+        ///Trang Chuyến đi sẽ hiện thị vị trí của tài xế và vẽ đường đi từ tài xế đến điểm đón
+        ///Và vẽ đường từ điểm đón đến điểm trả, cập nhật lộ trình theo thời gian thực
+      } else if (newTripStatusValue == "cancelled") {
+        cMethods.displaySnackbar("Yêu cầu đã bị huỷ bởi Khách hàng!", context);
+      } else if (newTripStatusValue == "timeout") {
+        cMethods.displaySnackbar("Yêu cầu hết hạn!", context);
+      } else {
+        cMethods.displaySnackbar("Không có yêu cầu!", context);
+      }
+    });
   }
 
   @override
@@ -164,12 +221,14 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 //Khoảng cách từ tài xế đến điểm đón
                 TimelineTile(
                   nodePosition: 0.2,
-                  node: const TimelineNode(
+                  node: TimelineNode(
                     indicator: Card(
                       margin: EdgeInsets.zero,
                       child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text('200 m'),
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(widget
+                            .tripDetailModel!.distanceFromDriverToStart
+                            .toString()),
                       ),
                     ),
                   ),
@@ -223,8 +282,9 @@ class _NotificationDialogState extends State<NotificationDialog> {
                       margin: EdgeInsets.zero,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child:
-                            Text(widget.tripDetailModel!.distance.toString()),
+                        child: Text(widget
+                            .tripDetailModel!.distanceFromStartToEnd
+                            .toString()),
                       ),
                     ),
                     startConnector: const DashedLineConnector(),
@@ -318,6 +378,9 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
                       setState(() {
                         tripRequestStatus = "accepted";
+
+                        //Kiểm tra tính khả dụng của yêu cầu, chắc chắn rằng người dùng chưa huỷ yêu cầu đó
+                        checkAvailabilityOfTripRequest(context);
                       });
                     },
                     style: ElevatedButton.styleFrom(

@@ -10,4 +10,6 @@ class MyColor {
   static const grey = Color.fromARGB(255, 101, 101, 101);
   static const green = Color.fromARGB(255, 60, 100, 60);
   static const transparent = Color.fromARGB(0, 255, 255, 255);
+
+  static const polyline = Color.fromARGB(255, 5, 80, 255);
 }

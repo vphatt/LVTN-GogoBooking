@@ -2,13 +2,11 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:driver_app/global/global_var.dart';
 import 'package:driver_app/pages/dashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:driver_app/methods/common_methods.dart';
 
@@ -95,12 +93,12 @@ class SplashController extends GetxController {
   // }
 
   void _launchScreen(BuildContext context) async {
-    Position positionOfDriver = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.bestForNavigation);
-    currentPositionOfDriver = positionOfDriver;
+    // Position positionOfDriver = await Geolocator.getCurrentPosition(
+    //     desiredAccuracy: LocationAccuracy.bestForNavigation);
+    // currentPositionOfDriver = positionOfDriver;
 
-    initialCurrentDriverLatLng = LatLng(
-        currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
+    // initialCurrentDriverLatLng = LatLng(
+    //     currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
     Navigator.push(
       context,
       MaterialPageRoute(
