@@ -61,8 +61,8 @@ class CommonMethods {
     positionStreamHomePage!.resume();
     Geofire.setLocation(
       FirebaseAuth.instance.currentUser!.uid,
-      driverCurrentPosition!.latitude,
-      driverCurrentPosition!.longitude,
+      driverCurrentPositionGB!.latitude,
+      driverCurrentPositionGB!.longitude,
     );
   }
 

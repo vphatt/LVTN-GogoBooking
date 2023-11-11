@@ -21,9 +21,12 @@ String goongMapKey = "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
 //Dùng cho cập nhật vị trí tài xế theo thời gian thực
 StreamSubscription<Position>? positionStreamHomePage;
 
+//Dùng cho cập nhật vị trí tài xế theo thời gian thực tại trang newtrip
+StreamSubscription<Position>? positionStreamNewTripPage;
+
 //Lưu vị trí hiện tại của tài xế
-Position? driverCurrentPosition;
-LatLng? driverCurrentLatLng;
+Position? driverCurrentPositionGB;
+LatLng? driverCurrentLatLngGB;
 
 //Lấy toạ độ của tài xế khi vừa mở app
 LatLng? initialCurrentDriverLatLng =

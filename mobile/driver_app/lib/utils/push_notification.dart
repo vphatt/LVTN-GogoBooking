@@ -131,7 +131,7 @@ class PushNotification {
       String? distanceFromDriverToStart = "";
 
       var directionDetail = await CommonMethods.getDirectionDetailFromAPI(
-          driverCurrentLatLng!, startLatLng);
+          driverCurrentLatLngGB!, startLatLng);
       distanceFromDriverToStart = directionDetail!.distanceText.toString();
 
       // getDistanceFromDriverToStart() async {

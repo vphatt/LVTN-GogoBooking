@@ -47,12 +47,12 @@ class _HomePageState extends State<HomePage> {
     Position positionOfDriver = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.bestForNavigation);
     currentPositionOfDriver = positionOfDriver;
-    driverCurrentPosition = currentPositionOfDriver;
+    driverCurrentPositionGB = currentPositionOfDriver;
 
     LatLng latLngPositionOfDriver = LatLng(
         currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
     initialCurrentDriverLatLng = latLngPositionOfDriver;
-    driverCurrentLatLng = latLngPositionOfDriver;
+    driverCurrentLatLngGB = latLngPositionOfDriver;
 
     CameraPosition cameraPosition =
         CameraPosition(target: latLngPositionOfDriver, zoom: 15);
