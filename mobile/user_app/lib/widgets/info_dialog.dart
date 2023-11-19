@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:restart_app/restart_app.dart';
 import 'package:user_app/utils/my_color.dart';
 
 class InfoDialog extends StatefulWidget {
@@ -61,6 +62,7 @@ class _InfoDialogState extends State<InfoDialog> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
+                      Restart.restartApp();
                     },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: MyColor.green,

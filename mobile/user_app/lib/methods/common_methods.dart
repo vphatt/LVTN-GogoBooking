@@ -170,6 +170,10 @@ class CommonMethods {
           responseFromDirectionAPI["routes"][0]["legs"][0]["duration"]["value"];
       directionModel.encodedPoint =
           responseFromDirectionAPI["routes"][0]["overview_polyline"]["points"];
+      directionModel.startAddress =
+          responseFromDirectionAPI["routes"][0]["legs"][0]["start_address"];
+      directionModel.endAddress =
+          responseFromDirectionAPI["routes"][0]["legs"][0]["end_address"];
 
       return directionModel;
     }
@@ -185,8 +189,7 @@ class CommonMethods {
     double fareAmount = 0;
     if ((directionModel.distanceValue! / 1000) <= 1) {
       fareAmount = openDoorAmount;
-    }
-    if ((directionModel.distanceValue! / 1000) > 1 &&
+    } else if ((directionModel.distanceValue! / 1000) > 1 &&
         (directionModel.distanceValue! / 1000) <= 30) {
       fareAmount =
           (directionModel.distanceValue! / 1000) * distancePerKmUnder30Amount;
@@ -194,7 +197,7 @@ class CommonMethods {
       fareAmount = (30 * distancePerKmUnder30Amount) +
           ((directionModel.distanceValue! / 1000) * distancePerKmOver30Amount);
     }
-    final format = NumberFormat("###,###,###");
+    final format = NumberFormat("#########");
     return format.format(fareAmount);
   }
 }

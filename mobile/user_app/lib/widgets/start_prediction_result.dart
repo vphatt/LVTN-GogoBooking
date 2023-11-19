@@ -109,14 +109,6 @@ class _StartPredictionResultState extends State<StartPredictionResult> {
                       ],
                     ),
                   ),
-                  const Text(
-                    "5 km",
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: MyColor.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold),
-                  ),
                 ],
               ),
             ),

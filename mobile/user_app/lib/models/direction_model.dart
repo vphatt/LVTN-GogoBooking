@@ -6,6 +6,8 @@ class DirectionModel {
   int? distanceValue;
   int? durationValue;
   String? encodedPoint;
+  String? startAddress;
+  String? endAddress;
 
   DirectionModel({
     this.distanceText,
@@ -13,5 +15,7 @@ class DirectionModel {
     this.distanceValue,
     this.durationValue,
     this.encodedPoint,
+    this.startAddress,
+    this.endAddress,
   });
 }

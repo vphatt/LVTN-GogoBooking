@@ -53,6 +53,8 @@ dependencies:
   loading_animation_widget: ^1.2.0+4 #hiệu ứng loading
   flutter_geofire: ^2.0.3 #theo dõi vị trí theo thời gian thực
   restart_app: ^1.2.1 #Khởi động lại ứng dụng
+  timelines: ^0.1.0 #timeline
+  url_launcher: ^6.2.1 #mở liên kết
 
 dev_dependencies:
   flutter_test:

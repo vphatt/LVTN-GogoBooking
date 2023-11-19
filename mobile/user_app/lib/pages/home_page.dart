@@ -11,6 +11,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:restart_app/restart_app.dart';
+import 'package:timelines/timelines.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:user_app/authentication/login_screen.dart';
 import 'package:user_app/global/global_var.dart';
 import 'package:user_app/methods/driver_manager_method.dart';
@@ -21,6 +23,7 @@ import 'package:user_app/pages/search_page.dart';
 import 'package:user_app/utils/app_info.dart';
 import 'package:user_app/utils/my_color.dart';
 import 'package:user_app/widgets/info_dialog.dart';
+import 'package:user_app/widgets/payment_dialog.dart';
 
 import '../controller/splash_controller.dart';
 import '../global/trip_var.dart';
@@ -81,6 +84,14 @@ class _HomePageState extends State<HomePage> {
   //Biến lưu danh sách các tài xế lân cận
   List<ActiveNearbyDriverModel>? activeNearbyDriverList;
 
+  //Key tạo drawer
+  GlobalKey<ScaffoldState> gbKey = GlobalKey<ScaffoldState>();
+
+  //Lắng nghe sự kiện trên tripRequest
+  StreamSubscription<DatabaseEvent>? tripStreamSubscription;
+
+  bool requestingDirectionDetail = false;
+
   @override
   void initState() {
     super.initState();
@@ -105,9 +116,6 @@ class _HomePageState extends State<HomePage> {
       carDriverIcon = iconCar;
     });
   }
-
-  //Key tạo drawer
-  GlobalKey<ScaffoldState> gbKey = GlobalKey<ScaffoldState>();
 
   //Lay vi tri hien tai cua nguoi dung
   getCurrentLocationUser() async {
@@ -148,6 +156,7 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             userNameGB = (snap.snapshot.value as Map)['name'];
             userPhoneGB = (snap.snapshot.value as Map)['phone'];
+            userEmailGB = (snap.snapshot.value as Map)['email'];
           });
         } else {
           FirebaseAuth.instance.signOut();
@@ -172,8 +181,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   //Hiện thị chi tiết quãng đường
-  displayTripDetail() async {
-    await getDirectionDetail();
+  displayTripRequestDetail() async {
+    await getDirectionRequestDetail();
 
     setState(() {
       bottomMapPadding = 300;
@@ -182,7 +191,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //Lấy thông tin chi tiết quãng đường
-  getDirectionDetail() async {
+  getDirectionRequestDetail() async {
     var startLocation =
         Provider.of<AppInfo>(context, listen: false).startLocation;
     var endLocation = Provider.of<AppInfo>(context, listen: false).endLocation;
@@ -260,7 +269,8 @@ class _HomePageState extends State<HomePage> {
     //Điểm đánh dấu vị trí bắt đầu
     Marker startPointMarker = Marker(
       markerId: const MarkerId("startPointMarkerID"),
-      position: startLatLng,
+      position: LatLng(pointLatLngList.first.latitude,
+          pointLatLngList.first.longitude), //startLatLng,
       icon: startLocationMark!,
       infoWindow:
           InfoWindow(title: startLocation.addressName, snippet: "Điểm đón"),
@@ -269,7 +279,8 @@ class _HomePageState extends State<HomePage> {
     //Điểm đánh dấu vị trí kết thúc
     Marker endPointMarker = Marker(
       markerId: const MarkerId("endPointMarkerID"),
-      position: endLatLng,
+      position:
+          LatLng(pointLatLngList.last.latitude, pointLatLngList.last.longitude),
       icon: endLocationMark!,
       infoWindow:
           InfoWindow(title: endLocation.addressName, snippet: "Điểm đến"),
@@ -282,11 +293,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   //Huỷ thông tin đã chọn
-  cancelDetail() {
+  cancelTripRequestDetail() {
     setState(() {
       polylineLatLng.clear();
       polylineSet.clear();
       markerSet.clear();
+      tripDirectionDetail = null;
       tripDetailHeight = 0;
       bottomMapPadding = 100;
       requestBoxHeight = 0;
@@ -297,17 +309,15 @@ class _HomePageState extends State<HomePage> {
       driverAvt = "";
       driverPhone = "";
       driverCarDetail = "";
-      driverArriving = "Tài xế đang đến";
+      tripStatusText = "Tài xế đang đến";
     });
-
-    Restart.restartApp();
   }
 
   //Hộp thoại yêu cầu xe
   showRequestBox() {
     setState(() {
       tripDetailHeight = 0; //ẩn chi tiết chuyến đi
-      requestBoxHeight = 300; //hiện hộp thoại yêu cầu
+      requestBoxHeight = 380; //hiện hộp thoại yêu cầu
       bottomMapPadding = 100;
     });
 
@@ -352,9 +362,13 @@ class _HomePageState extends State<HomePage> {
       "userPhone": userPhoneGB,
       "startLatLng": startLatLngMap,
       "endLatLng": endLatLngMap,
-      "startAddress": startLocation.addressName,
-      "endAddress": endLocation.addressName,
-      "tripAmount": "",
+      "startAddress": startLocation.addressCoverted,
+      "endAddress": endLocation.addressCoverted,
+      "distance": tripDirectionDetail!.distanceText!,
+      "tripAmount":
+          cMethods.calculateFareAmount(tripDirectionDetail!).toString(),
+      "actualFareAmount": "",
+      "actualDistanceMoved": "",
 
       //tình trạng: khởi tạo, đang thực hiện và đã hoàn thành,...
       "status": "initial",
@@ -369,11 +383,165 @@ class _HomePageState extends State<HomePage> {
     };
 
     tripRequestRef!.set(dataMap);
+
+    //Lắng nghe sự kiện, xem đã có tài xế chấp nhận yêu cầu hay chưa
+    tripStreamSubscription =
+        tripRequestRef!.onValue.listen((eventSnapshot) async {
+      if (eventSnapshot.snapshot.value == null) {
+        return;
+      }
+
+      if ((eventSnapshot.snapshot.value as Map)["driverName"] != null) {
+        driverName = (eventSnapshot.snapshot.value as Map)["driverName"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["driverPhone"] != null) {
+        driverPhone = (eventSnapshot.snapshot.value as Map)["driverPhone"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["driverAvt"] != null) {
+        driverAvt = (eventSnapshot.snapshot.value as Map)["driverAvt"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["carDetail"] != null) {
+        driverCarDetail = (eventSnapshot.snapshot.value as Map)["carDetail"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["status"] != null) {
+        driverStatus = (eventSnapshot.snapshot.value as Map)["status"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["driverLocation"] != null) {
+        double driverLatitude = double.parse(
+            (eventSnapshot.snapshot.value as Map)["driverLocation"]["latitude"]
+                .toString());
+
+        double driverLongitude = double.parse(
+            (eventSnapshot.snapshot.value as Map)["driverLocation"]["longitude"]
+                .toString());
+
+        LatLng driverCurrentLocationLatLng =
+            LatLng(driverLatitude, driverLongitude);
+
+        //Lắng nghe trạng thái yêu cầu
+        if (driverStatus == "accepted") {
+          //Cập nhật thông tin từ tài xế đến điểm đón
+          updateFromDriverCurrentLocationToStart(driverCurrentLocationLatLng);
+        } else if (driverStatus == "arrived") {
+          //Cập nhật rằng ti xế đã đến
+          setState(() {
+            tripStatusText = "Tài xế đã đến rồi!";
+          });
+        } else if (driverStatus == "onTrip") {
+          //Cập nhật thông tin từ tài xế đến điểm trả
+          updateFromDriverCurrentLocationToEnd(driverCurrentLocationLatLng);
+        }
+      }
+
+      if (driverStatus == "accepted") {
+        showTripDetailContainer();
+
+        Geofire.stopListener();
+
+        //Loại bỏ các tài xế lân cân trên bản đồ
+        setState(() {
+          markerSet.removeWhere(
+              (element) => element.markerId.value.contains("driver"));
+        });
+      }
+
+      if (driverStatus == "ended") {
+        if ((eventSnapshot.snapshot.value as Map)["actualFareAmount"] != null) {
+          double actualFareAmount = double.parse(
+              (eventSnapshot.snapshot.value as Map)["actualFareAmount"]
+                  .toString());
+
+          String actualDistance =
+              (eventSnapshot.snapshot.value as Map)["actualDistanceMoved"];
+
+          //Hiện PaymentDialog và nhận phản hồi
+          var responeFromPaymentDialog = await showDialog(
+              context: context,
+              builder: (BuildContext context) => PaymentDialog(
+                    actualFareAmount: actualFareAmount.toString(),
+                    userName: userNameGB,
+                    actualDistanceText: actualDistance,
+                  ));
+
+          if (responeFromPaymentDialog == "paid") {
+            tripRequestRef!.onDisconnect();
+            tripRequestRef = null;
+
+            tripStreamSubscription!.cancel();
+            tripStreamSubscription = null;
+
+            cancelTripRequestDetail();
+
+            Restart.restartApp();
+          }
+        }
+      }
+    });
+  }
+
+  showTripDetailContainer() {
+    setState(() {
+      requestBoxHeight = 0;
+      tripDetailHeight = 350;
+    });
+  }
+
+  //Cập nhật từ tài xế đến điểm đón
+  updateFromDriverCurrentLocationToStart(driverCurrentLocationLatLng) async {
+    if (!requestingDirectionDetail) {
+      requestingDirectionDetail = true;
+
+      var startLocation =
+          Provider.of<AppInfo>(context, listen: false).startLocation;
+
+      var startLocationLatLng =
+          LatLng(startLocation!.latitude!, startLocation.longitude!);
+
+      var directionDetailStart = await CommonMethods.getDirectionDetailFromAPI(
+          driverCurrentLocationLatLng, startLocationLatLng);
+
+      if (directionDetailStart == null) {
+        return;
+      }
+
+      setState(() {
+        tripStatusText =
+            "Tài xế sẽ đến sau ${directionDetailStart.durationText}";
+      });
+
+      requestingDirectionDetail = false;
+    }
+  }
+
+  //Cập nhật từ tài xế đến điểm trả
+  updateFromDriverCurrentLocationToEnd(driverCurrentLocationLatLng) async {
+    if (!requestingDirectionDetail) {
+      requestingDirectionDetail = true;
+
+      var endLocation =
+          Provider.of<AppInfo>(context, listen: false).endLocation;
+
+      var endLocationLatLng =
+          LatLng(endLocation!.latitude!, endLocation.longitude!);
+
+      var directionDetailEnd = await CommonMethods.getDirectionDetailFromAPI(
+          driverCurrentLocationLatLng, endLocationLatLng);
+
+      if (directionDetailEnd == null) {
+        return;
+      }
+
+      setState(() {
+        tripStatusText = "Tới nơi trong ${directionDetailEnd.durationText}";
+      });
+
+      requestingDirectionDetail = false;
+    }
   }
 
   //Huỷ yêu cầu
   cancelRequest() {
-    //Xoá thông tin yêu cầu khỏi csdl
+    //Xoá thông tin yêu cầu
     tripRequestRef!.remove();
     setState(() {
       stateOfTrip = "normal";
@@ -463,8 +631,6 @@ class _HomePageState extends State<HomePage> {
 
             //Cập nhật tài xế trên bản đồ
             updateActiveNearbyDriverOnMap();
-
-            //Hiện thị các tài xế hoạt động gần nhất
             break;
         }
       }
@@ -475,7 +641,7 @@ class _HomePageState extends State<HomePage> {
   searchDriverForTrip() {
     if (activeNearbyDriverList!.isEmpty) {
       cancelRequest();
-      cancelDetail();
+      cancelTripRequestDetail();
       noDriverForTrip();
       return;
     }
@@ -508,19 +674,59 @@ class _HomePageState extends State<HomePage> {
         .child(nearestSelectedDriver.uidDriver.toString())
         .child("deviceToken");
 
-    tokenNearestSelectedDriverRef.once().then((dataSnapshot) {
-      if (dataSnapshot.snapshot.value != null) {
-        String deviceToken = dataSnapshot.snapshot.value.toString();
+    tokenNearestSelectedDriverRef.once().then(
+      (dataSnapshot) {
+        if (dataSnapshot.snapshot.value != null) {
+          String deviceToken = dataSnapshot.snapshot.value.toString();
 
-        //Gửi thống báo đến tài xế
-        PushNotificationMethods.sendNotificationToNearestSelectedDriver(
-            context, deviceToken, tripRequestRef!.key.toString());
-      } else {
-        return;
-      }
-    });
+          //Gửi thống báo đến tài xế
+          PushNotificationMethods.sendNotificationToNearestSelectedDriver(
+              context, deviceToken, tripRequestRef!.key.toString());
+        } else {
+          return;
+        }
+
+        var countDown = Timer.periodic(
+          const Duration(seconds: 1),
+          (timer) {
+            driverRequestTimeOut--;
+
+            //Nếu yêu cầu bị huỷ
+            if (stateOfTrip != "requesting") {
+              timer.cancel();
+              nearestSelectedDriverRef.set("cancelled");
+              nearestSelectedDriverRef.onDisconnect();
+              driverRequestTimeOut = 30;
+            }
+
+            //Khi tài xế gần nhất chấp nhận yêu cầu
+            nearestSelectedDriverRef.onValue.listen(
+              (dataSnapshot) {
+                if (dataSnapshot.snapshot.value.toString() == "accepted") {
+                  timer.cancel();
+                  nearestSelectedDriverRef.onDisconnect();
+                  driverRequestTimeOut = 30;
+                }
+              },
+            );
+
+            //Khi qua 30 giây mà tài xế không phản hồi, gửi đến tài xế khác
+            if (driverRequestTimeOut == 0) {
+              nearestSelectedDriverRef.set("timeout");
+              timer.cancel();
+              nearestSelectedDriverRef.onDisconnect();
+              driverRequestTimeOut = 30;
+
+              //Gửi yêu cầu đến tài xế khác gần tiếp theo
+              searchDriverForTrip();
+            }
+          },
+        );
+      },
+    );
   }
 
+  //Thông báo không tìm thấy tài xế
   noDriverForTrip() {
     showDialog(
       context: context,
@@ -534,6 +740,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
           key: gbKey,
@@ -549,8 +756,8 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     const CircleAvatar(
                       radius: 60,
-                      backgroundImage:
-                          AssetImage("assets/images/logo_yellow.png"),
+                      backgroundImage: NetworkImage(
+                          "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/user_profile.png?alt=media&token=afd72318-033b-4468-90e8-30ced957e3d6"),
                     ),
                     const SizedBox(
                       height: 20,
@@ -562,9 +769,9 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 20,
                           fontWeight: FontWeight.bold),
                     ),
-                    const Text(
-                      'Hồ sơ',
-                      style: TextStyle(
+                    Text(
+                      userEmailGB,
+                      style: const TextStyle(
                           color: MyColor.green,
                           fontSize: 20,
                           fontStyle: FontStyle.italic),
@@ -588,11 +795,36 @@ class _HomePageState extends State<HomePage> {
                     onTap: () {},
                     child: const ListTile(
                       leading: Icon(
-                        Icons.info,
+                        Icons.person,
                         color: MyColor.green,
                       ),
                       title: Text(
-                        'About',
+                        'Thông tin cá nhân',
+                        style: TextStyle(
+                            color: MyColor.green, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30),
+                  child: Divider(
+                    height: 1,
+                    color: MyColor.green,
+                    thickness: 1,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: InkWell(
+                    onTap: () {},
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.history,
+                        color: MyColor.green,
+                      ),
+                      title: Text(
+                        'Lịch sử đặt xe',
                         style: TextStyle(
                             color: MyColor.green, fontWeight: FontWeight.bold),
                       ),
@@ -648,10 +880,12 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.only(top: 100, bottom: bottomMapPadding),
                 mapType: MapType.normal,
                 myLocationEnabled: true,
+                zoomControlsEnabled: false,
                 polylines: polylineSet,
                 markers: markerSet,
                 circles: circleSet,
-                initialCameraPosition: googleMapInitialPosition,
+                initialCameraPosition:
+                    CameraPosition(target: initialCurrentUserLatLng!, zoom: 15),
                 onMapCreated: (GoogleMapController mapController) {
                   googleMapController = mapController;
                   completerGoogleMapController.complete(googleMapController);
@@ -719,7 +953,7 @@ class _HomePageState extends State<HomePage> {
                                       .endLocation!
                                       .addressName ??
                                   "";
-                              displayTripDetail();
+                              displayTripRequestDetail();
                               // print('ĐIỂM ĐÓNNNNNN: $startAddress');
                               // print('ĐIỂM ĐÍCHHHHH: $endAddress');
                             }
@@ -751,189 +985,260 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              //Chi tiết chuyến đi
+              //Chi tiết yêu cầu chuyến đi
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Container(
-                  height: tripDetailHeight,
-                  decoration: const BoxDecoration(
-                    color: MyColor.white,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(15),
-                        topRight: Radius.circular(15)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey,
-                        offset: Offset(3, 0), //(x,y)
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                child: (tripDirectionDetail != null && driverName == "")
+                    ? Container(
+                        decoration: const BoxDecoration(
+                          color: MyColor.white,
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(15),
+                              topRight: Radius.circular(15)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey,
+                              offset: Offset(3, 0), //(x,y)
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Wrap(
+                            //mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              Text(
-                                (tripDirectionDetail != null)
-                                    ? tripDirectionDetail!.distanceText!
-                                    : "0 km",
-                                style: const TextStyle(
-                                    fontSize: 25, fontWeight: FontWeight.bold),
-                              ),
-                              const Text(
-                                " - ",
-                                style: TextStyle(
-                                    fontSize: 25, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                (tripDirectionDetail != null)
-                                    ? tripDirectionDetail!.durationText!
-                                    : "0 phút",
-                                style: const TextStyle(
-                                    fontSize: 25, fontWeight: FontWeight.bold),
-                              ),
-                              const Text(
-                                " - ",
-                                style: TextStyle(
-                                    fontSize: 25, fontWeight: FontWeight.bold),
-                              ),
-                              RichText(
-                                text: TextSpan(
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
-                                    TextSpan(
-                                      text: (tripDirectionDetail != null)
-                                          ? cMethods
-                                              .calculateFareAmount(
-                                                  tripDirectionDetail!)
-                                              .toString()
-                                          : "0",
+                                    Text(
+                                      (tripDirectionDetail != null)
+                                          ? tripDirectionDetail!.durationText!
+                                          : "0 phút",
                                       style: const TextStyle(
                                           fontSize: 25,
-                                          fontWeight: FontWeight.bold,
-                                          color: MyColor.red),
+                                          fontWeight: FontWeight.bold),
                                     ),
-                                    const TextSpan(
-                                      text: " ₫",
+                                    const Text(
+                                      " - ",
                                       style: TextStyle(
                                           fontSize: 25,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: (tripDirectionDetail != null)
+                                                ? formatVND.format(double.parse(
+                                                    cMethods.calculateFareAmount(
+                                                        tripDirectionDetail!)))
+                                                : "0",
+                                            style: const TextStyle(
+                                                fontSize: 25,
+                                                fontWeight: FontWeight.bold,
+                                                color: MyColor.red),
+                                          ),
+                                          const TextSpan(
+                                            text: " ₫",
+                                            style: TextStyle(
+                                                fontSize: 25,
+                                                fontWeight: FontWeight.bold,
+                                                color: MyColor.black),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Spacer(),
+
+                                    //Nút ẩn chi tiết, huỷ thông tin đã chọn
+                                    IconButton(
+                                        onPressed: () {
+                                          cancelTripRequestDetail();
+                                        },
+                                        icon: const Icon(Icons.close))
+                                  ],
+                                ),
+                              ),
+
+                              //Thông tin chuyến đi
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: screenSize.width / 20),
+                                child: Column(
+                                  children: [
+                                    //Điểm đón khách
+                                    TimelineTile(
+                                      nodePosition: 0.2,
+                                      oppositeContents: Text(
+                                        'Điểm đón ',
+                                        style: TextStyle(
+                                          color: MyColor.green,
+                                          fontSize: screenSize.height / 70,
                                           fontWeight: FontWeight.bold,
-                                          color: MyColor.black),
+                                        ),
+                                      ),
+                                      contents: Container(
+                                        padding: EdgeInsets.all(
+                                            screenSize.height / 90),
+                                        child: Text(
+                                          tripDirectionDetail != null
+                                              ? Provider.of<AppInfo>(context,
+                                                      listen: false)
+                                                  .startLocation!
+                                                  .addressCoverted
+                                                  .toString()
+                                              : "",
+                                          maxLines: 3,
+                                          style: TextStyle(
+                                            color: MyColor.black,
+                                            fontSize: screenSize.height / 70,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      node: const TimelineNode(
+                                        indicator: DotIndicator(
+                                          color: MyColor.transparent,
+                                          child: Icon(
+                                            Icons.my_location,
+                                            color: MyColor.green,
+                                          ),
+                                        ),
+                                        endConnector: SolidLineConnector(
+                                          color: MyColor.green,
+                                        ),
+                                      ),
+                                    ),
+
+                                    //Khoảng cách từ điểm đón khách đến điểm trả khách
+                                    TimelineTile(
+                                      nodePosition: 0.2,
+                                      node: TimelineNode(
+                                        indicator: Card(
+                                          margin: EdgeInsets.zero,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                                tripDirectionDetail != null
+                                                    ? tripDirectionDetail!
+                                                        .distanceText
+                                                        .toString()
+                                                    : ""),
+                                          ),
+                                        ),
+                                        startConnector:
+                                            const DashedLineConnector(),
+                                        endConnector:
+                                            const SolidLineConnector(),
+                                      ),
+                                    ),
+
+                                    //Điểm trả khách
+                                    TimelineTile(
+                                      nodePosition: 0.2,
+                                      oppositeContents: Text(
+                                        'Điểm trả ',
+                                        style: TextStyle(
+                                          color: MyColor.red,
+                                          fontSize: screenSize.height / 70,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      contents: Container(
+                                        padding: EdgeInsets.all(
+                                            screenSize.height / 90),
+                                        child: Text(
+                                          tripDirectionDetail != null
+                                              ? Provider.of<AppInfo>(context,
+                                                      listen: false)
+                                                  .endLocation!
+                                                  .addressCoverted
+                                                  .toString()
+                                              : "",
+                                          maxLines: 3,
+                                          style: TextStyle(
+                                            color: MyColor.black,
+                                            fontSize: screenSize.height / 70,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      node: const TimelineNode(
+                                        indicator: DotIndicator(
+                                          color: MyColor.transparent,
+                                          child: Icon(
+                                            Icons.location_on,
+                                            color: MyColor.red,
+                                          ),
+                                        ),
+                                        startConnector: SolidLineConnector(
+                                          color: MyColor.green,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Spacer(),
+                              Divider(
+                                height: screenSize.height / 50,
+                                indent: 30,
+                                endIndent: 30,
+                              ),
 
-                              //Nút ẩn chi tiết, huỷ thông tin đã chọn
-                              IconButton(
-                                  onPressed: () {
-                                    cancelDetail();
-                                  },
-                                  icon: const Icon(Icons.close))
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const CircleAvatar(
-                                radius: 50,
-                                backgroundImage:
-                                    AssetImage("assets/images/driver.png"),
-                              ),
-                              const Column(
-                                children: [
-                                  Text(
-                                    "Nguyễn Văn Xế",
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    "83H-45678",
-                                    style: TextStyle(
-                                        fontSize: 30,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  Text("BMW, Xanh",
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold))
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: const BoxDecoration(
-                                    color: MyColor.green,
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10))),
-                                child: const Column(
-                                  children: [
-                                    Text("2",
-                                        style: TextStyle(
-                                            fontSize: 40,
-                                            fontWeight: FontWeight.bold,
-                                            color: MyColor.white)),
-                                    Text("Phút đợi",
+                              //Request Button
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Center(
+                                  child: FilledButton(
+                                    style: ButtonStyle(
+                                        shape: MaterialStateProperty.all<
+                                                RoundedRectangleBorder>(
+                                            RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ))),
+                                    onPressed: () {
+                                      setState(() {
+                                        stateOfTrip =
+                                            "requesting"; // Đổi trạng thái sang đang yêu cầu
+                                      });
+
+                                      //Hiện thị hộp thoại khi người dùng click yêu cầu
+                                      showRequestBox();
+
+                                      //Lấy danh sach cac tai xe lan can trong ban kinh 20km
+                                      activeNearbyDriverList =
+                                          DriverManagerMethod
+                                              .activeNearbyDriverList;
+
+                                      //Tìm tài xế cho chuyến đi
+                                      searchDriverForTrip();
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Text(
+                                        "YÊU CẦU",
                                         style: TextStyle(
                                             fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: MyColor.white))
-                                  ],
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               )
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: FilledButton(
-                            style: ButtonStyle(
-                                shape: MaterialStateProperty.all<
-                                        RoundedRectangleBorder>(
-                                    RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
-                            ))),
-                            onPressed: () {
-                              setState(() {
-                                stateOfTrip =
-                                    "requesting"; // Đổi trạng thái sang đang yêu cầu
-                              });
-
-                              //Hiện thị hộp thoại khi người dùng click yêu cầu
-                              showRequestBox();
-
-                              //Lấy danh sach cac tai xe lan can trong ban kinh 20km
-                              activeNearbyDriverList =
-                                  DriverManagerMethod.activeNearbyDriverList;
-
-                              //Tìm tài xế cho chuyến đi
-                              searchDriverForTrip();
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text(
-                                "YÊU CẦU",
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
+                      )
+                    : const SizedBox(
+                        height: 0,
+                      ),
               ),
 
               //Hộp thoại yêu cầu đặt xe
@@ -977,7 +1282,7 @@ class _HomePageState extends State<HomePage> {
                         RawMaterialButton(
                           onPressed: () {
                             //Huỷ yêu cầu
-                            cancelDetail();
+                            cancelTripRequestDetail();
                             cancelRequest();
                           },
                           elevation: 2.0,
@@ -994,6 +1299,247 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+              ),
+
+              //Hộp thoại chi tiết chuyến đi
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: driverName != ""
+                    ? Container(
+                        //height: tripDetailHeight,
+                        decoration: const BoxDecoration(
+                          color: MyColor.white,
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(15),
+                              topRight: Radius.circular(15)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey,
+                              offset: Offset(3, 0), //(x,y)
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Wrap(
+                          children: [
+                            //cập nhật thời gian tài xế đến
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Center(
+                                child: Text(
+                                  tripStatusText,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    color: MyColor.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const Divider(
+                              color: MyColor.grey,
+                              indent: 30,
+                              endIndent: 30,
+                            ),
+
+                            //Thông tin tài xế
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 10, left: 20, right: 10, bottom: 10),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.network(
+                                      driverAvt == ""
+                                          ? "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/driver_profile.png?alt=media&token=bc53e4fe-5c07-46c4-9021-6d2bfd06a996"
+                                          : driverAvt,
+                                      height: 80,
+                                      width: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      driverName,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      driverCarDetail,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Xep hang sao",
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                const Spacer(),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 10, left: 10, right: 20, bottom: 10),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      launchUrl(
+                                          Uri.parse("tel://$driverPhone"));
+                                    },
+                                    style: ButtonStyle(
+                                      shape: MaterialStateProperty.all(
+                                          const CircleBorder()),
+                                      padding: MaterialStateProperty.all(
+                                          const EdgeInsets.all(25)),
+                                      backgroundColor:
+                                          MaterialStateProperty.all(
+                                              MyColor.green),
+                                    ),
+                                    child: const Icon(
+                                      Icons.phone,
+                                      color: MyColor.white,
+                                      size: 25,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(
+                              color: MyColor.grey,
+                              indent: 30,
+                              endIndent: 30,
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenSize.width / 20),
+                              child: Column(
+                                children: [
+                                  //Điểm đón khách
+                                  TimelineTile(
+                                    nodePosition: 0.2,
+                                    oppositeContents: Text(
+                                      'Điểm đón ',
+                                      style: TextStyle(
+                                        color: MyColor.green,
+                                        fontSize: screenSize.height / 70,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    contents: Container(
+                                      padding: EdgeInsets.all(
+                                          screenSize.height / 90),
+                                      child: Text(
+                                        tripDirectionDetail != null
+                                            ? Provider.of<AppInfo>(context,
+                                                    listen: false)
+                                                .startLocation!
+                                                .addressCoverted
+                                                .toString()
+                                            : "",
+                                        maxLines: 3,
+                                        style: TextStyle(
+                                          color: MyColor.black,
+                                          fontSize: screenSize.height / 70,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    node: const TimelineNode(
+                                      indicator: DotIndicator(
+                                        color: MyColor.transparent,
+                                        child: Icon(
+                                          Icons.my_location,
+                                          color: MyColor.green,
+                                        ),
+                                      ),
+                                      endConnector: SolidLineConnector(
+                                        color: MyColor.green,
+                                      ),
+                                    ),
+                                  ),
+
+                                  //Khoảng cách từ điểm đón khách đến điểm trả khách
+                                  TimelineTile(
+                                    nodePosition: 0.2,
+                                    node: TimelineNode(
+                                      indicator: Card(
+                                        margin: EdgeInsets.zero,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                              tripDirectionDetail != null
+                                                  ? tripDirectionDetail!
+                                                      .distanceText
+                                                      .toString()
+                                                  : ""),
+                                        ),
+                                      ),
+                                      startConnector:
+                                          const DashedLineConnector(),
+                                      endConnector: const SolidLineConnector(),
+                                    ),
+                                  ),
+
+                                  //Điểm trả khách
+                                  TimelineTile(
+                                    nodePosition: 0.2,
+                                    oppositeContents: Text(
+                                      'Điểm trả ',
+                                      style: TextStyle(
+                                        color: MyColor.red,
+                                        fontSize: screenSize.height / 70,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    contents: Container(
+                                      padding: EdgeInsets.all(
+                                          screenSize.height / 90),
+                                      child: Text(
+                                        tripDirectionDetail != null
+                                            ? Provider.of<AppInfo>(context,
+                                                    listen: false)
+                                                .endLocation!
+                                                .addressCoverted
+                                                .toString()
+                                            : "",
+                                        maxLines: 3,
+                                        style: TextStyle(
+                                          color: MyColor.black,
+                                          fontSize: screenSize.height / 70,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    node: const TimelineNode(
+                                      indicator: DotIndicator(
+                                        color: MyColor.transparent,
+                                        child: Icon(
+                                          Icons.location_on,
+                                          color: MyColor.red,
+                                        ),
+                                      ),
+                                      startConnector: SolidLineConnector(
+                                        color: MyColor.green,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox(height: 0),
               )
             ],
           )),
