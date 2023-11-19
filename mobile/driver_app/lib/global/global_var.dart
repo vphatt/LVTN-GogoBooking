@@ -2,9 +2,10 @@ import 'dart:async';
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 
 //Tên tài xế đăng nhập
-String driverNameGB = '';
+//String driverNameGB = '';
 
 //URL của firebase
 String flutterURL =
@@ -16,7 +17,8 @@ String googleMapKey = "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ";
 
 //Goong Maps API KEY
 //Sử dụng cho việc lấy vị trí, vẽ đường, tính khoảng cách, tìm kiếm địa điểm,...
-String goongMapKey = "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
+String goongMapKey =
+    "eQJSWRSq3Cqe3Q5ZDaEzRqGf2dm7NohpKVzyytEb"; //"ciMkBVsvm2gHKuNxcvVRI1EGpQyi8KkbcikBSix7"; // "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
 
 //Dùng cho cập nhật vị trí tài xế theo thời gian thực
 StreamSubscription<Position>? positionStreamHomePage;
@@ -34,3 +36,13 @@ LatLng? initialCurrentDriverLatLng =
 
 //Âm thanh
 final notificationSound = AssetsAudioPlayer();
+
+//Thông tin tài xế
+String driverName = "";
+String driverPhone = "";
+String driverAvt = "";
+String carColor = "";
+String carModel = "";
+String carNumber = "";
+
+final formatVND = NumberFormat("###,###,###");

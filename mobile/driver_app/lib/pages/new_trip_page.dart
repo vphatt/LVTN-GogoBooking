@@ -1,14 +1,20 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:driver_app/methods/common_methods.dart';
+import 'package:driver_app/models/direction_model.dart';
 import 'package:driver_app/models/trip_detail_model.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:driver_app/widgets/loading_dialog.dart';
+import 'package:driver_app/widgets/payment_dialog.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:timelines/timelines.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../global/global_var.dart';
 
@@ -30,21 +36,33 @@ class _NewTripPageState extends State<NewTripPage> {
   Set<Polyline> polylineSet = <Polyline>{};
 
   BitmapDescriptor? driverMark;
-  BitmapDescriptor? carMark;
+  //BitmapDescriptor? carMark;
   BitmapDescriptor? startMark;
+  BitmapDescriptor? endMark;
 
   bool directionRequest = false;
   String statusOfTrip = "accepted";
 
+  String durationText = "";
+  String distanceText = "";
+  String actualFareAmountText = "";
+  String buttonTripTitle = "ĐÃ ĐÓN";
+  Color startTripColor = MyColor.green;
+
+  CommonMethods cMethod = CommonMethods();
+
   @override
   void initState() {
     super.initState();
+
+    polylineLatLngList.clear();
+
     //Gán icon car
-    BitmapDescriptor.fromAssetImage(
-            const ImageConfiguration(), 'assets/images/car_icon2.png')
-        .then((value) {
-      carMark = value;
-    });
+    // BitmapDescriptor.fromAssetImage(
+    //         const ImageConfiguration(), 'assets/images/car_icon2.png')
+    //     .then((value) {
+    //   carMark = value;
+    // });
 
     //Gán icon điểm cuối
     BitmapDescriptor.fromAssetImage(
@@ -59,10 +77,49 @@ class _NewTripPageState extends State<NewTripPage> {
         .then((value) {
       driverMark = value;
     });
+
+    //Gán icon điểm cuối
+    BitmapDescriptor.fromAssetImage(
+            const ImageConfiguration(), 'assets/images/endhererz.png')
+        .then((value) {
+      endMark = value;
+    });
+
+    updateDriverInfoToTripRequests();
+  }
+
+  //Cập nhật thông tin tài xế vào yêu cầu chuyến đi
+  updateDriverInfoToTripRequests() async {
+    Map<String, dynamic> driverInfoMap = {
+      "driverId": FirebaseAuth.instance.currentUser!.uid,
+      "status": "accepted",
+      "driverName": driverName,
+      "driverPhone": driverPhone,
+      "driverAvt": driverAvt,
+      "carDetail": "$carModel - $carColor - $carNumber",
+    };
+
+    Map<String, dynamic> driverCurrentLocation = {
+      "latitude": driverCurrentPositionGB!.latitude.toString(),
+      "longitude": driverCurrentPositionGB!.longitude.toString(),
+    };
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(widget.newTripDetailInfo!.tripId!)
+        .update(driverInfoMap);
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(widget.newTripDetailInfo!.tripId!)
+        .child("driverLocation")
+        .update(driverCurrentLocation);
   }
 
   //lấy vị trí tài xế và vẽ đường đi
-  getDirectionAndDrawRoute(driverLocationLatLng, startLocationLatLng) async {
+  getDirectionAndDrawRoute(startLocationLatLng, endLocationLatLng) async {
     showDialog(
         context: context,
         builder: (BuildContext context) =>
@@ -70,7 +127,7 @@ class _NewTripPageState extends State<NewTripPage> {
 
     //Lấy thông tin chuyến đi
     var tripDetailInfo = await CommonMethods.getDirectionDetailFromAPI(
-        driverLocationLatLng, startLocationLatLng);
+        startLocationLatLng, endLocationLatLng);
 
     // ignore: use_build_context_synchronously
     Navigator.pop(context);
@@ -79,8 +136,8 @@ class _NewTripPageState extends State<NewTripPage> {
     List<PointLatLng> pointLatLngList =
         pointsPolyline.decodePolyline(tripDetailInfo!.encodedPoint!);
 
-    //Xoá danh sách trong trường hợp chuyến cũ vẫn còn lưu lại
-    polylineLatLngList.clear();
+    // //Xoá danh sách trong trường hợp chuyến cũ vẫn còn lưu lại
+    // polylineLatLngList.clear();
 
     if (pointLatLngList.isNotEmpty) {
       for (var pointLatLng in pointLatLngList) {
@@ -108,38 +165,38 @@ class _NewTripPageState extends State<NewTripPage> {
     //Đặt đường vẽ khớp với bản đồ
     LatLngBounds latLngBounds;
 
-    if (driverLocationLatLng.latitude > startLocationLatLng.latitude &&
-        driverLocationLatLng.longitude > startLocationLatLng.longitude) {
+    if (startLocationLatLng.latitude > endLocationLatLng.latitude &&
+        startLocationLatLng.longitude > endLocationLatLng.longitude) {
       latLngBounds = LatLngBounds(
-        southwest: startLocationLatLng,
-        northeast: driverLocationLatLng,
+        southwest: endLocationLatLng,
+        northeast: startLocationLatLng,
       );
-    } else if (driverLocationLatLng.longitude > startLocationLatLng.longitude) {
+    } else if (startLocationLatLng.longitude > endLocationLatLng.longitude) {
       latLngBounds = LatLngBounds(
         southwest: LatLng(
-          driverLocationLatLng.latitude,
+          startLocationLatLng.latitude,
+          endLocationLatLng.longitude,
+        ),
+        northeast: LatLng(
+          endLocationLatLng.latitude,
+          startLocationLatLng.longitude,
+        ),
+      );
+    } else if (startLocationLatLng.latitude > endLocationLatLng.latitude) {
+      latLngBounds = LatLngBounds(
+        southwest: LatLng(
+          endLocationLatLng.latitude,
           startLocationLatLng.longitude,
         ),
         northeast: LatLng(
           startLocationLatLng.latitude,
-          driverLocationLatLng.longitude,
-        ),
-      );
-    } else if (driverLocationLatLng.latitude > startLocationLatLng.latitude) {
-      latLngBounds = LatLngBounds(
-        southwest: LatLng(
-          startLocationLatLng.latitude,
-          driverLocationLatLng.longitude,
-        ),
-        northeast: LatLng(
-          driverLocationLatLng.latitude,
-          startLocationLatLng.longitude,
+          endLocationLatLng.longitude,
         ),
       );
     } else {
       latLngBounds = LatLngBounds(
-        southwest: driverLocationLatLng,
-        northeast: startLocationLatLng,
+        southwest: startLocationLatLng,
+        northeast: endLocationLatLng,
       );
     }
 
@@ -156,18 +213,33 @@ class _NewTripPageState extends State<NewTripPage> {
     //   infoWindow: const InfoWindow(title: "Vị trí của bạn"),
     // );
 
-    Marker startMarker = Marker(
-      markerId: const MarkerId("startMarkerId"),
-      position: LatLng(pointLatLngList.last.latitude,
-          pointLatLngList.last.longitude), //startLatLng,
-      icon: startMark!,
-      infoWindow: const InfoWindow(title: "Điểm đón khách"),
-    );
+    if (endLocationLatLng != widget.newTripDetailInfo!.endLatLng!) {
+      Marker startMarker = Marker(
+        markerId: const MarkerId("startMarkerId"),
+        position: LatLng(pointLatLngList.last.latitude,
+            pointLatLngList.last.longitude), //startLatLng,
+        icon: startMark!,
+        infoWindow: const InfoWindow(title: "Điểm đón khách"),
+      );
 
-    setState(() {
-      //markerSet.add(driverMarker);
-      markerSet.add(startMarker);
-    });
+      setState(() {
+        //markerSet.add(driverMarker);
+        markerSet.add(startMarker);
+      });
+    } else {
+      Marker endMarker = Marker(
+        markerId: const MarkerId("endMarkerId"),
+        position: LatLng(pointLatLngList.last.latitude,
+            pointLatLngList.last.longitude), //startLatLng,
+        icon: endMark!,
+        infoWindow: const InfoWindow(title: "Điểm trả khách"),
+      );
+
+      setState(() {
+        //markerSet.add(driverMarker);
+        markerSet.add(endMarker);
+      });
+    }
   }
 
   //Vị trí tài xế theo thời gian thục
@@ -203,7 +275,7 @@ class _NewTripPageState extends State<NewTripPage> {
       lastPositionLatLng = driverCurrentPositionLatLng;
 
       //Cập nhật thông tin chuyến đi
-      updateTripInfomation();
+      updateTripInformation();
 
       //Cập nhật vị trí tài xế vào yêu cầu chuyến đi
       Map updateDriverLocation = {
@@ -220,16 +292,16 @@ class _NewTripPageState extends State<NewTripPage> {
   }
 
   //Cập nhật thông tin chuyến đi
-  updateTripInfomation() async {
+  updateTripInformation() async {
     if (!directionRequest) {
       directionRequest = true;
 
-      if (driverCurrentLatLngGB == null) {
+      if (driverCurrentPositionGB == null) {
         return;
       }
 
-      var driverLocationLatLng = LatLng(
-          driverCurrentLatLngGB!.latitude, driverCurrentLatLngGB!.longitude);
+      var driverLocationLatLng = LatLng(driverCurrentPositionGB!.latitude,
+          driverCurrentPositionGB!.longitude);
 
       LatLng endLocationLatLng;
 
@@ -244,11 +316,125 @@ class _NewTripPageState extends State<NewTripPage> {
 
       var directionInfomation = await CommonMethods.getDirectionDetailFromAPI(
           driverLocationLatLng, endLocationLatLng);
+
+      if (directionInfomation != null) {
+        directionRequest = false;
+
+        setState(() {
+          durationText = directionInfomation.durationText!;
+          distanceText = directionInfomation.distanceText!;
+        });
+      }
+
+      //Cập nhật tiền xe theo thời gian thực
+      //Tính số tiền thật sự mà khách hàng phải trả dựa trên quãng đường đã đi
+      //Vì khách hàng có thể yêu cầu dừng xe trước khi đến điểm trả
+      //Nên số tiền thật sự có thể ít hơn số tiền dự tính ban đầu
+
+      if (statusOfTrip == "onTrip") {
+        var directionDetailEndTripInfo =
+            await CommonMethods.getDirectionDetailFromAPI(
+          widget.newTripDetailInfo!.startLatLng!,
+          driverLocationLatLng,
+        );
+
+        String actualFareAmount =
+            (cMethod.calculateFareAmount(directionDetailEndTripInfo!))
+                .toString();
+
+        setState(() {
+          actualFareAmountText = actualFareAmount;
+        });
+      }
     }
+  }
+
+  endTrip() async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) =>
+            LoadingDialog(messageText: "Đang kết thúc..."));
+
+    //Tính toán phí phụ, trừ khuyến mãi
+
+    //Cập nhật phí cuối cùng lên csdl
+    FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(widget.newTripDetailInfo!.tripId!)
+        .child("actualFareAmount")
+        .set(actualFareAmountText);
+
+    //Cập nhật quảng đường thực tế đã di chuyển
+    FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(widget.newTripDetailInfo!.tripId!)
+        .child("actualDistanceMoved")
+        .set(distanceText);
+
+    //Cập nhập lại trang thái chuyến
+    FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(widget.newTripDetailInfo!.tripId!)
+        .child("status")
+        .set("ended");
+
+    Navigator.pop(context);
+
+    //Dừng chia sẻ vị trí của tài xế khi kết thúc
+    positionStreamNewTripPage!.cancel();
+
+    //hiện bảng thanh toán
+    showPaymentDialog();
+
+    //Cập nhật tổng doanh thu của tài xế
+    updateFareAmountToDriverIncome(actualFareAmountText);
+  }
+
+  showPaymentDialog() {
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => PaymentDialog(
+              actualFareAmount: actualFareAmountText,
+              userName: widget.newTripDetailInfo!.userName!,
+              actualDistanceText: distanceText,
+            ));
+  }
+
+  //Cập nhật tổng doanh thu của tài xế
+  updateFareAmountToDriverIncome(String actualFareAmount) async {
+    DatabaseReference driverIncomeRef = FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .child("incomes");
+
+    //Cộng dồn thu nhập mới vào thu nhập hiện có
+    await driverIncomeRef.once().then((snap) {
+      //Nếu không phải là chuyến xe đầu tiên (không phải tài xế mới)
+      if (snap.snapshot.value != null) {
+        double currentIncome = double.parse(snap.snapshot.value.toString());
+        double lastestTripIncome = double.parse(actualFareAmount);
+
+        double newTotalIncome = currentIncome + lastestTripIncome;
+
+        driverIncomeRef.set(newTotalIncome);
+      }
+
+      //Nếu là tài xế mới (chưa có chuyến xe nào)
+      else {
+        driverIncomeRef.set(actualFareAmount);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 70,
@@ -264,15 +450,17 @@ class _NewTripPageState extends State<NewTripPage> {
       body: Stack(
         children: [
           GoogleMap(
-            padding: const EdgeInsets.symmetric(vertical: 100),
+            padding: EdgeInsets.only(
+                bottom: screenSize.height / 2.5, top: screenSize.height / 6),
             mapType: MapType.normal,
-            //myLocationEnabled: true,
+            myLocationEnabled: true,
             polylines: polylineSet,
             markers: markerSet,
             initialCameraPosition:
                 CameraPosition(target: initialCurrentDriverLatLng!, zoom: 15),
             // target: LatLng(10.032433897900804, 105.7576156559728), zoom: 15),
             onMapCreated: (GoogleMapController mapController) async {
+              polylineSet.clear();
               googleMapController = mapController;
               completerGoogleMapController.complete(googleMapController);
 
@@ -282,8 +470,6 @@ class _NewTripPageState extends State<NewTripPage> {
               );
 
               var startLocationLatLng = widget.newTripDetailInfo!.startLatLng;
-              print(
-                  "ĐIỂM ĐÓN TOẠ ĐỘ: ${widget.newTripDetailInfo!.startLatLng!.latitude},${widget.newTripDetailInfo!.startLatLng!.longitude}");
 
               //lấy vị trí tài xế và vẽ đường đi
               await getDirectionAndDrawRoute(
@@ -292,8 +478,337 @@ class _NewTripPageState extends State<NewTripPage> {
               );
 
               //Cập nhật vị trí theo thời gian thực
-              getRealTimeDriverLocation();
+              await getRealTimeDriverLocation();
             },
+          ),
+
+          //Thông tin chuyến đi
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              decoration: const BoxDecoration(
+                  color: MyColor.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: MyColor.black,
+                      blurRadius: 5,
+                      spreadRadius: 0.5,
+                      offset: Offset(0.5, 0.5),
+                    ),
+                  ]),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                    horizontal: screenSize.width / 40,
+                    vertical: screenSize.height / 40),
+                child: Wrap(
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text(
+                        durationText,
+                        style: TextStyle(
+                            color: MyColor.black,
+                            fontSize: screenSize.height / 50,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        " - ",
+                        style: TextStyle(
+                            color: MyColor.black,
+                            fontSize: screenSize.height / 50,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        distanceText,
+                        style: TextStyle(
+                            color: MyColor.black,
+                            fontSize: screenSize.height / 50,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ]),
+                    Divider(
+                      height: screenSize.height / 50,
+                      indent: 30,
+                      endIndent: 30,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: screenSize.width / 20),
+                      child: Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.newTripDetailInfo!.userName!,
+                                style: TextStyle(
+                                  color: MyColor.green,
+                                  fontSize: screenSize.height / 60,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                widget.newTripDetailInfo!.userPhone!,
+                                style: TextStyle(
+                                    color: MyColor.black,
+                                    fontSize: screenSize.height / 60,
+                                    fontWeight: FontWeight.bold,
+                                    fontStyle: FontStyle.italic),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Text(
+                            actualFareAmountText != ""
+                                ? "${formatVND.format(double.parse(actualFareAmountText))} đ"
+                                : "Chưa tính",
+                            style: TextStyle(
+                              color: MyColor.red,
+                              fontSize: screenSize.height / 60,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    Divider(
+                      height: screenSize.height / 50,
+                      indent: 30,
+                      endIndent: 30,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: screenSize.width / 20),
+                      child: Column(
+                        children: [
+                          //Điểm đón khách
+                          TimelineTile(
+                            nodePosition: 0.2,
+                            oppositeContents: Text(
+                              'Điểm đón ',
+                              style: TextStyle(
+                                color: MyColor.green,
+                                fontSize: screenSize.height / 70,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            contents: Container(
+                              padding: EdgeInsets.all(screenSize.height / 90),
+                              child: Text(
+                                widget.newTripDetailInfo!.startAddress
+                                    .toString(),
+                                maxLines: 2,
+                                style: TextStyle(
+                                  color: MyColor.black,
+                                  fontSize: screenSize.height / 70,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            node: const TimelineNode(
+                              indicator: DotIndicator(
+                                color: MyColor.transparent,
+                                child: Icon(
+                                  Icons.my_location,
+                                  color: MyColor.green,
+                                ),
+                              ),
+                              endConnector: SolidLineConnector(
+                                color: MyColor.green,
+                              ),
+                            ),
+                          ),
+
+                          //Khoảng cách từ điểm đón khách đến điểm trả khách
+                          TimelineTile(
+                            nodePosition: 0.18,
+                            node: TimelineNode(
+                              indicator: Card(
+                                margin: EdgeInsets.zero,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                      "${widget.newTripDetailInfo!.distanceFromStartToEnd}"),
+                                ),
+                              ),
+                              startConnector: const DashedLineConnector(),
+                              endConnector: const SolidLineConnector(),
+                            ),
+                          ),
+
+                          //Điểm trả khách
+                          TimelineTile(
+                            nodePosition: 0.2,
+                            oppositeContents: Text(
+                              'Điểm trả ',
+                              style: TextStyle(
+                                color: MyColor.red,
+                                fontSize: screenSize.height / 70,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            contents: Container(
+                              padding: EdgeInsets.all(screenSize.height / 90),
+                              child: Text(
+                                widget.newTripDetailInfo!.endAddress!
+                                    .toString(),
+                                maxLines: 2,
+                                style: TextStyle(
+                                  color: MyColor.black,
+                                  fontSize: screenSize.height / 70,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            node: const TimelineNode(
+                              indicator: DotIndicator(
+                                color: MyColor.transparent,
+                                child: Icon(
+                                  Icons.location_on,
+                                  color: MyColor.red,
+                                ),
+                              ),
+                              startConnector: SolidLineConnector(
+                                color: MyColor.green,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(
+                      height: screenSize.height / 50,
+                      indent: 30,
+                      endIndent: 30,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () {
+                            launchUrl(Uri.parse(
+                                "tel://${widget.newTripDetailInfo!.userPhone.toString()}"));
+                          },
+                          style: OutlinedButton.styleFrom(
+                              side: const BorderSide(
+                                width: 2,
+                                color: MyColor.green,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5))),
+                          child: SizedBox(
+                            width: screenSize.width / 4,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.phone,
+                                    size: screenSize.height / 65,
+                                  ),
+                                  Text(
+                                    "GỌI",
+                                    style: TextStyle(
+                                        fontSize: screenSize.height / 70,
+                                        fontWeight: FontWeight.bold,
+                                        color: MyColor.green),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 20,
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            //Nếu tài xế chấp nhận => tài xế đang đến
+                            if (statusOfTrip == "accepted") {
+                              setState(() {
+                                buttonTripTitle = "BẮT ĐẦU";
+                                startTripColor = MyColor.red;
+                              });
+
+                              //Thay đổi trạng thái rằng tài xế đã đến
+                              statusOfTrip = "arrived";
+
+                              FirebaseDatabase.instance
+                                  .ref()
+                                  .child("tripRequests")
+                                  .child(widget.newTripDetailInfo!.tripId!)
+                                  .child("status")
+                                  .set("arrived");
+
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      LoadingDialog(
+                                          messageText: "Bắt đầu chuyến đi..."));
+
+                              polylineLatLngList.clear();
+                              await getDirectionAndDrawRoute(
+                                  widget.newTripDetailInfo!.startLatLng,
+                                  widget.newTripDetailInfo!.endLatLng);
+
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(context);
+                            }
+
+                            //Nếu tài xế đang chở khách hàng
+                            else if (statusOfTrip == "arrived") {
+                              setState(() {
+                                buttonTripTitle = "KẾT THÚC";
+                                startTripColor = MyColor.blue;
+                              });
+
+                              //Thay đổi trạng thái rằng tài xế đang trong chuyến đi
+                              statusOfTrip = "onTrip";
+                              FirebaseDatabase.instance
+                                  .ref()
+                                  .child("tripRequests")
+                                  .child(widget.newTripDetailInfo!.tripId!)
+                                  .child("status")
+                                  .set("onTrip");
+                            }
+                            //Nếu tài xế kết thúc chuyến đi
+                            else if (statusOfTrip == "onTrip") {
+                              //Kết thúc chuyến đi
+                              endTrip();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: startTripColor,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5))),
+                          child: SizedBox(
+                            width: screenSize.width / 5,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Center(
+                                child: Text(
+                                  buttonTripTitle,
+                                  style: TextStyle(
+                                      fontSize: screenSize.height / 70,
+                                      fontWeight: FontWeight.bold,
+                                      color: MyColor.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

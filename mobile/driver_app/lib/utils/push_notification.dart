@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../global/global_var.dart';
-import '../methods/common_methods.dart';
-import '../models/direction_model.dart';
 import 'my_color.dart';
 
 class PushNotification {
@@ -30,6 +28,7 @@ class PushNotification {
 
     firebaseMessaging.subscribeToTopic("drivers");
     firebaseMessaging.subscribeToTopic("users");
+    // return null;
   }
 
   //Đợi thông báo mới
@@ -126,24 +125,8 @@ class PushNotification {
       tripDetailModel.tripPrice =
           (dataSnapshot.snapshot.value! as Map)["tripAmount"];
 
-      //Lấy khoảng cách từ tài xế đến điểm đón
-      LatLng? startLatLng = LatLng(startLat, startLng);
-      String? distanceFromDriverToStart = "";
-
-      var directionDetail = await CommonMethods.getDirectionDetailFromAPI(
-          driverCurrentLatLngGB!, startLatLng);
-      distanceFromDriverToStart = directionDetail!.distanceText.toString();
-
-      // getDistanceFromDriverToStart() async {
-      //   print("getDistanceFromDriverToStart ĐÃ THỰC THIIIIIIIIII");
-      //   var directionDetail = await CommonMethods.getDirectionDetailFromAPI(
-      //       driverCurrentLatLng!, startLatLng);
-      //   distanceFromDriverToStart = directionDetail!.distanceText.toString();
-      // }
-
-      tripDetailModel.distanceFromDriverToStart = distanceFromDriverToStart;
-
       //Hiện log thông báo bên trong ứng dụng
+
       showModalBottomSheet(
         backgroundColor: MyColor.transparent,
         context: context,

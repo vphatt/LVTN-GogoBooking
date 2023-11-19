@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:driver_app/controller/splash_controller.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:driver_app/utils/push_notification.dart';
+import 'package:driver_app/widgets/payment_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ class _HomePageState extends State<HomePage> {
         //Kiem tra tai khoan co bi khoa khong
         if ((snap.snapshot.value as Map)["blockStatus"] == 'no') {
           //lấy tên của tai xe đã đăng nhập
-          driverNameGB = (snap.snapshot.value as Map)['name'];
+          //driverNameGB = (snap.snapshot.value as Map)['name'];
         } else {
           FirebaseAuth.instance.signOut();
           Navigator.push(
@@ -165,10 +166,31 @@ class _HomePageState extends State<HomePage> {
     pushNotification.startListeningForNewNotification(context);
   }
 
+  //Nhận thông tin của driver đang đăng nhập
+  retrieveCurrentDriverInfo() async {
+    await FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid)
+        .once()
+        .then(
+      (snap) {
+        driverName = (snap.snapshot.value as Map)["name"];
+        driverPhone = (snap.snapshot.value as Map)["phone"];
+        driverAvt = (snap.snapshot.value as Map)["avatar"];
+        carColor = (snap.snapshot.value as Map)["car_details"]["carColor"];
+        carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
+        carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];
+      },
+    );
+
+    initializePushNotification();
+  }
+
   @override
   void initState() {
     super.initState();
-    initializePushNotification();
+    retrieveCurrentDriverInfo();
   }
 
   @override
@@ -191,6 +213,17 @@ class _HomePageState extends State<HomePage> {
             getCurrentLocationDriver();
           },
         ),
+
+        // Center(
+        //   child: TextButton(
+        //       onPressed: () {
+        //         showDialog(
+        //             context: context,
+        //             barrierDismissible: false,
+        //             builder: (BuildContext context) => PaymentDialog());
+        //       },
+        //       child: Text("TESTTTTTT")),
+        // ),
 
         //Nút online và offline
         Positioned(

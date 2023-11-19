@@ -56,6 +56,9 @@ dependencies:
   circular_countdown_timer: ^0.2.3
   assets_audio_player: ^3.1.1 #trình phát nhạc
   flutter_polyline_points: ^2.0.0 #Vẽ đường đi trên bản đồ
+  url_launcher: ^6.2.1 #mở liên kết
+  intl: ^0.18.1 #định dạng số
+  restart_app: ^1.2.1 #Khởi động lại ứng dụng
 
 dev_dependencies:
   flutter_test:

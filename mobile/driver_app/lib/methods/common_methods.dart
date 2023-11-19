@@ -10,6 +10,7 @@ import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class CommonMethods {
   //Kiểm tra internet của thiết bị, để xem thiết bị có kết nối
@@ -53,7 +54,6 @@ class CommonMethods {
   disableUpdateLocationDriver() {
     positionStreamHomePage!.pause();
     Geofire.removeLocation(FirebaseAuth.instance.currentUser!.uid);
-    print("TẮT VỊ TRÍ CỦA TÀI XẾ");
   }
 
   //Bật cập nhật vị trí tài xế tại trang chủ
@@ -108,5 +108,27 @@ class CommonMethods {
 
       return directionModel;
     }
+  }
+
+  //Tính tiền xe
+  calculateFareAmount(DirectionModel directionModel) {
+    double distancePerKmUnder30Amount =
+        11000; //Giá xe khi quãng đường dưới 30km
+    double openDoorAmount = 9000; //Giá mở cửa
+    double distancePerKmOver30Amount = 9500; //Giá xe khi quãng đường trên 30km
+
+    double fareAmount = 0;
+    if ((directionModel.distanceValue! / 1000) <= 1) {
+      fareAmount = openDoorAmount;
+    } else if ((directionModel.distanceValue! / 1000) > 1 &&
+        (directionModel.distanceValue! / 1000) <= 30) {
+      fareAmount =
+          (directionModel.distanceValue! / 1000) * distancePerKmUnder30Amount;
+    } else {
+      fareAmount = (30 * distancePerKmUnder30Amount) +
+          ((directionModel.distanceValue! / 1000) * distancePerKmOver30Amount);
+    }
+    final format = NumberFormat("#########");
+    return format.format(fareAmount);
   }
 }

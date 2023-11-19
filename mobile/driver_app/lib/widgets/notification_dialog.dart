@@ -8,11 +8,8 @@ import 'package:driver_app/widgets/loading_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:timelines/timelines.dart';
 
-import '../models/direction_model.dart';
 import '../utils/my_color.dart';
 
 class NotificationDialog extends StatefulWidget {
@@ -66,8 +63,8 @@ class _NotificationDialogState extends State<NotificationDialog> {
 
   @override
   void initState() {
-    autoCancelNotificationDialogAfter30s();
     super.initState();
+    autoCancelNotificationDialogAfter30s();
   }
 
   //KIểm tra tính khả dụng của chuyến đi
@@ -99,13 +96,13 @@ class _NotificationDialogState extends State<NotificationDialog> {
         driverTripStatusRef.set("accepted");
 
         ///Không cập nhật vị trí của tài xế tại trang chủ
-        cMethods.disableUpdateLocationDriver();
+        //cMethods.disableUpdateLocationDriver();
 
         ///Sau khi chấp nhận yêu cầu, tài xế sẽ chuyển đến trang Chuyến đi
         Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (BuildContext context) =>
+                builder: (c) =>
                     NewTripPage(newTripDetailInfo: widget.tripDetailModel)));
 
         ///Trang Chuyến đi sẽ hiện thị vị trí của tài xế và vẽ đường đi từ tài xế đến điểm đón
@@ -163,7 +160,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 ),
                 const Spacer(),
                 Text(
-                  "${widget.tripDetailModel!.tripPrice} đ",
+                  "${formatVND.format(double.parse(widget.tripDetailModel!.tripPrice.toString()))} đ (dự tính)",
                   style: TextStyle(
                     color: MyColor.black,
                     fontSize: screenSize.height / 60,
@@ -182,58 +179,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
             padding: EdgeInsets.symmetric(horizontal: screenSize.width / 20),
             child: Column(
               children: [
-                //Vị trí hiện tại của tài xế
-                TimelineTile(
-                  nodePosition: 0.2,
-                  // oppositeContents: Text(
-                  //   'Hiện tại ',
-                  //   style: TextStyle(
-                  //     color: MyColor.green,
-                  //     fontSize: screenSize.height / 70,
-                  //     fontWeight: FontWeight.bold,
-                  //   ),
-                  // ),
-                  contents: Container(
-                    padding: EdgeInsets.all(screenSize.height / 90),
-                    child: Text(
-                      'Vị trí của bạn',
-                      style: TextStyle(
-                        color: MyColor.black,
-                        fontSize: screenSize.height / 70,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  node: const TimelineNode(
-                    indicator: DotIndicator(
-                      color: MyColor.transparent,
-                      child: Icon(
-                        Icons.car_repair,
-                        color: MyColor.blue,
-                      ),
-                    ),
-                    endConnector: DashedLineConnector(
-                      color: MyColor.blue,
-                    ),
-                  ),
-                ),
-
-                //Khoảng cách từ tài xế đến điểm đón
-                TimelineTile(
-                  nodePosition: 0.2,
-                  node: TimelineNode(
-                    indicator: Card(
-                      margin: EdgeInsets.zero,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(widget
-                            .tripDetailModel!.distanceFromDriverToStart
-                            .toString()),
-                      ),
-                    ),
-                  ),
-                ),
-
                 //Điểm đón khách
                 TimelineTile(
                   nodePosition: 0.2,
@@ -264,9 +209,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         Icons.my_location,
                         color: MyColor.green,
                       ),
-                    ),
-                    startConnector: DashedLineConnector(
-                      color: MyColor.blue,
                     ),
                     endConnector: SolidLineConnector(
                       color: MyColor.green,

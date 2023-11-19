@@ -70,35 +70,9 @@ class SplashController extends GetxController {
     }
   }
 
-  // Future<Position> _getCurrentLocationDriver(BuildContext context) async {
-  //   Position position = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.high);
-  //   if (position.latitude != 0 && position.longitude != 0) {
-  //     print('Vi do: ${position.latitude}, Kinh do: ${position.longitude}');
-  //     latitute.value = position.latitude.toString();
-  //     logitude.value = position.longitude.toString();
-  //     _launchScreen(context);
-  //   }
-  //   return await Geolocator.getCurrentPosition();
-  // }
   Position? currentPositionOfDriver;
 
-  // getCurrentLocationDriver() async {
-  //   Position positionOfDriver = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.bestForNavigation);
-  //   currentPositionOfDriver = positionOfDriver;
-
-  //   currentDriverLatLng = LatLng(
-  //       currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
-  // }
-
   void _launchScreen(BuildContext context) async {
-    // Position positionOfDriver = await Geolocator.getCurrentPosition(
-    //     desiredAccuracy: LocationAccuracy.bestForNavigation);
-    // currentPositionOfDriver = positionOfDriver;
-
-    // initialCurrentDriverLatLng = LatLng(
-    //     currentPositionOfDriver!.latitude, currentPositionOfDriver!.longitude);
     Navigator.push(
       context,
       MaterialPageRoute(
