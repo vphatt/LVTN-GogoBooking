@@ -12,6 +12,7 @@ class LoadingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
@@ -38,7 +39,8 @@ class LoadingDialog extends StatelessWidget {
             ),
             Text(
               messageText,
-              style: const TextStyle(fontSize: 20, color: MyColor.green),
+              style: TextStyle(
+                  fontSize: screenSize.height / 55, color: MyColor.green),
             ),
           ]),
         ),

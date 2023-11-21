@@ -15,6 +15,7 @@ class PushNotification {
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
 
   //Tao ma xac dinh thiet bi va luu ma vao csdl
+  // ignore: body_might_complete_normally_nullable
   Future<String?> generateDeviceToken() async {
     String? deviceToken = await firebaseMessaging.getToken();
 

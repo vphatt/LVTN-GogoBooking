@@ -39,6 +39,7 @@ final notificationSound = AssetsAudioPlayer();
 
 //Thông tin tài xế
 String driverName = "";
+String driverEmail = "";
 String driverPhone = "";
 String driverAvt = "";
 String carColor = "";

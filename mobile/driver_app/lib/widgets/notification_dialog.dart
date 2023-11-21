@@ -43,6 +43,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
   //Huỷ thông báo sau 30s không phản hồi
   int requestTimeOut = 30;
   autoCancelNotificationDialogAfter30s() {
+    // ignore: unused_local_variable
     var countDown = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (tripRequestStatus == "accepted") {
         timer.cancel();

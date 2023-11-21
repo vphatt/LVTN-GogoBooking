@@ -1,7 +1,6 @@
 import 'package:driver_app/methods/common_methods.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:restart_app/restart_app.dart';
 
 import '../global/global_var.dart';

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:driver_app/controller/splash_controller.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:driver_app/utils/push_notification.dart';
-import 'package:driver_app/widgets/payment_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -178,6 +177,7 @@ class _HomePageState extends State<HomePage> {
         driverName = (snap.snapshot.value as Map)["name"];
         driverPhone = (snap.snapshot.value as Map)["phone"];
         driverAvt = (snap.snapshot.value as Map)["avatar"];
+        driverEmail = (snap.snapshot.value as Map)["email"];
         carColor = (snap.snapshot.value as Map)["car_details"]["carColor"];
         carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
         carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];

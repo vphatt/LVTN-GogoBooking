@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: EdgeInsets.only(top: 50),
                     child: Center(
                       child: Text(
-                        'TÀI XẾ ĐĂNG NHẬP',
+                        "ĐĂNG NHẬP ĐỂ TIẾP TỤC",
                         style: TextStyle(color: MyColor.white, fontSize: 20),
                       ),
                     ),

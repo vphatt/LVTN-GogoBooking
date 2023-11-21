@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:driver_app/methods/common_methods.dart';
-import 'package:driver_app/models/direction_model.dart';
 import 'package:driver_app/models/trip_detail_model.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:driver_app/widgets/loading_dialog.dart';
@@ -244,6 +242,7 @@ class _NewTripPageState extends State<NewTripPage> {
 
   //Vị trí tài xế theo thời gian thục
   getRealTimeDriverLocation() {
+    // ignore: unused_local_variable
     LatLng lastPositionLatLng = const LatLng(0, 0);
     positionStreamNewTripPage =
         Geolocator.getPositionStream().listen((Position driverPosition) {
