@@ -19,6 +19,7 @@ import 'package:user_app/methods/driver_manager_method.dart';
 import 'package:user_app/methods/push_notification_methods.dart';
 import 'package:user_app/models/active_nearby_driver_model.dart';
 import 'package:user_app/models/direction_model.dart';
+import 'package:user_app/pages/history_trip_page.dart';
 import 'package:user_app/pages/search_page.dart';
 import 'package:user_app/utils/app_info.dart';
 import 'package:user_app/utils/my_color.dart';
@@ -746,51 +747,38 @@ class _HomePageState extends State<HomePage> {
           key: gbKey,
           drawer: Drawer(
             backgroundColor: MyColor.white,
-            child: ListView(
+            child: Column(
               children: [
-                //header drawer
-                const SizedBox(
-                  height: 50,
+                const Padding(
+                  padding: EdgeInsets.all(15),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: NetworkImage(
+                        "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/user_profile.png?alt=media&token=afd72318-033b-4468-90e8-30ced957e3d6"),
+                  ),
                 ),
-                Column(
-                  children: [
-                    const CircleAvatar(
-                      radius: 60,
-                      backgroundImage: NetworkImage(
-                          "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/user_profile.png?alt=media&token=afd72318-033b-4468-90e8-30ced957e3d6"),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      userNameGB,
-                      style: const TextStyle(
-                          color: MyColor.green,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      userEmailGB,
-                      style: const TextStyle(
-                          color: MyColor.green,
-                          fontSize: 20,
-                          fontStyle: FontStyle.italic),
-                    ),
-                  ],
+                Text(
+                  userNameGB,
+                  style: const TextStyle(
+                      color: MyColor.green,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(
-                  height: 50,
+                Text(
+                  userEmailGB,
+                  style: const TextStyle(
+                      color: MyColor.green,
+                      fontSize: 20,
+                      fontStyle: FontStyle.italic),
                 ),
                 const Divider(
                   height: 1,
                   color: MyColor.green,
                   thickness: 1,
                 ),
-
-                //body drawer
-
                 Padding(
-                  padding: const EdgeInsets.all(15),
+                  padding: const EdgeInsets.only(
+                      left: 15, right: 15, bottom: 15, top: 15),
                   child: InkWell(
                     onTap: () {},
                     child: const ListTile(
@@ -806,18 +794,16 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30),
-                  child: Divider(
-                    height: 1,
-                    color: MyColor.green,
-                    thickness: 1,
-                  ),
-                ),
                 Padding(
-                  padding: const EdgeInsets.all(15),
+                  padding:
+                      const EdgeInsets.only(left: 15, right: 15, bottom: 15),
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const HistoryTripPage()));
+                    },
                     child: const ListTile(
                       leading: Icon(
                         Icons.history,
@@ -831,19 +817,11 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30),
-                  child: Divider(
-                    height: 1,
-                    color: MyColor.green,
-                    thickness: 1,
-                  ),
-                ),
-
+                const Spacer(),
                 Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: InkWell(
-                    onTap: () {
+                  padding: const EdgeInsets.all(20),
+                  child: ElevatedButton(
+                    onPressed: () {
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -854,18 +832,20 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ));
+                              builder: (context) => const LoginScreen()));
                     },
-                    child: const ListTile(
-                      leading: Icon(
-                        Icons.logout,
-                        color: MyColor.red,
-                      ),
-                      title: Text(
-                        'Đăng xuất',
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: MyColor.red,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5))),
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        "ĐĂNG XUẤT",
                         style: TextStyle(
-                            color: MyColor.red, fontWeight: FontWeight.bold),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: MyColor.white),
                       ),
                     ),
                   ),

@@ -199,21 +199,11 @@ class _SearchPageState extends State<SearchPage> {
                                           await CommonMethods.getCurrentPlaceID(
                                               context, currentPositionOfUser!);
                                       placeIDCurrent = placeId;
-                                      //print("PLACEID: $placeIDCurrent");
-                                      // ignore: use_build_context_synchronously
+                                      
                                       CommonMethods.placeCurrentDetail(
                                           context, placeIDCurrent);
                                       startController.text = addr;
-                                      //     Provider.of<AppInfo>(context,
-                                      //             listen: false)
-                                      //         .startLocation!
-                                      //         .addressName!;
-                                      // print("ĐỊA CHỈ ĐÃ CHỌNNNNN: " +
-                                      //     Provider.of<AppInfo>(context,
-                                      //             listen: false)
-                                      //         .startLocation!
-                                      //         .addressName!);
-                                      //placeDetail(widget.predictionModel!.placeId.toString());
+                                      
                                     },
                                     icon: const Text(
                                       'Tại đây',
