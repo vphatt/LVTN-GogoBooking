@@ -38,7 +38,11 @@ dependencies:
   font_awesome_flutter: ^10.6.0
   firebase_core: ^2.18.0
   firebase_database: ^10.3.0
+  firebase_auth: #^4.10.1 #xác thực tài khoản với firebase
   data_table_2: ^2.5.8 #bảng dữ liệu
+  intl: ^0.18.1 #định dạng số
+  url_launcher: ^6.2.1 #mở liên kết
+  one_context: ^2.1.0
 
 dev_dependencies:
   flutter_test:
