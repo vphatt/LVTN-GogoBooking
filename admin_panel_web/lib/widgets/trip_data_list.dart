@@ -112,6 +112,9 @@ class TripData extends DataTableSource {
                       showDialog(
                           context: navigatorKey.currentContext!,
                           builder: (context) => AlertDialog(
+                                shape: const RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(5))),
                                 title: Row(
                                   children: [
                                     const Text("Xoá chuyến có id: ",
@@ -260,11 +263,11 @@ class _TripDataListState extends State<TripDataList> {
                       label: Text('ID CHUYẾN',
                           style: TextStyle(fontWeight: FontWeight.bold))),
                   DataColumn(
-                    label: Text('TÊN KHÁCH HÀNG',
+                    label: Text('KHÁCH HÀNG',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   DataColumn(
-                    label: Text('TÊN TÀI XẾ',
+                    label: Text('TÀI XẾ',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   DataColumn(
@@ -428,11 +431,11 @@ class _TripDataListState extends State<TripDataList> {
                     label: Text('ID CHUYẾN',
                         style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(
-                  label: Text('TÊN KHÁCH HÀNG',
+                  label: Text('KHÁCH HÀNG',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 DataColumn(
-                  label: Text('TÊN TÀI XẾ',
+                  label: Text('TÀI XẾ',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 DataColumn(

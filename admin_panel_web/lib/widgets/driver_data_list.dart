@@ -120,6 +120,9 @@ class DriverData extends DataTableSource {
                           showDialog(
                               context: navigatorKey.currentContext!,
                               builder: (context) => AlertDialog(
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(5))),
                                     title: Row(
                                       children: [
                                         const Text("Xoá tài xế: ",
