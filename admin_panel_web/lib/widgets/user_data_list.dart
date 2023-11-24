@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:admin_panel_web/utils/global_var.dart';
 import 'package:admin_panel_web/utils/my_color.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -77,7 +79,7 @@ class UserData extends DataTableSource {
                       dataList[index]["blockStatus"] == "no"
                           ? IconButton(
                               onPressed: () async {
-                                await FirebaseDatabase.instance
+                                await FirebaseDatabase(databaseURL: flutterURL)
                                     .ref()
                                     .child("users")
                                     .child(dataList[index]["id"])
@@ -90,7 +92,7 @@ class UserData extends DataTableSource {
                               icon: const Icon(Icons.lock, color: MyColor.red))
                           : IconButton(
                               onPressed: () async {
-                                await FirebaseDatabase.instance
+                                await FirebaseDatabase(databaseURL: flutterURL)
                                     .ref()
                                     .child("users")
                                     .child(dataList[index]["id"])
@@ -146,7 +148,8 @@ class UserData extends DataTableSource {
                                 ElevatedButton(
                                   onPressed: () async {
                                     Navigator.pop(context);
-                                    await FirebaseDatabase.instance
+                                    await FirebaseDatabase(
+                                            databaseURL: flutterURL)
                                         .ref()
                                         .child("users")
                                         .child(dataList[index]["id"])
@@ -199,7 +202,8 @@ class _UserDataListState extends State<UserDataList> {
   TextEditingController searchController = TextEditingController();
   List searchResult = [];
 
-  final usersDataFromDatabase = FirebaseDatabase.instance.ref().child("users");
+  final usersDataFromDatabase =
+      FirebaseDatabase(databaseURL: flutterURL).ref().child("users");
 
   @override
   Widget build(BuildContext context) {

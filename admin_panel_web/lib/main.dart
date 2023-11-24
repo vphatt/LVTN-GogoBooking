@@ -1,4 +1,4 @@
-import 'package:admin_panel_web/dashboard/side_navigation.dart';
+import 'package:admin_panel_web/authentication/login_screen.dart';
 import 'package:admin_panel_web/utils/global_var.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: MyColor.green),
         useMaterial3: true,
       ),
-      home: const SideNavigator(),
+      home: const LoginScreen(), // const SideNavigator(),
     );
   }
 }

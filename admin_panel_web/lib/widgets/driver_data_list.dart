@@ -92,7 +92,8 @@ class DriverData extends DataTableSource {
                       dataList[index]["blockStatus"] == "no"
                           ? IconButton(
                               onPressed: () async {
-                                await FirebaseDatabase.instance
+                                // ignore: deprecated_member_use
+                                await FirebaseDatabase(databaseURL: flutterURL)
                                     .ref()
                                     .child("drivers")
                                     .child(dataList[index]["id"])
@@ -105,7 +106,8 @@ class DriverData extends DataTableSource {
                               icon: const Icon(Icons.lock, color: MyColor.red))
                           : IconButton(
                               onPressed: () async {
-                                await FirebaseDatabase.instance
+                                // ignore: deprecated_member_use
+                                await FirebaseDatabase(databaseURL: flutterURL)
                                     .ref()
                                     .child("drivers")
                                     .child(dataList[index]["id"])
@@ -161,7 +163,9 @@ class DriverData extends DataTableSource {
                                       ElevatedButton(
                                         onPressed: () async {
                                           Navigator.pop(context);
-                                          await FirebaseDatabase.instance
+                                          // ignore: deprecated_member_use
+                                          await FirebaseDatabase(
+                                                  databaseURL: flutterURL)
                                               .ref()
                                               .child("drivers")
                                               .child(dataList[index]["id"])
@@ -214,7 +218,9 @@ class _DriverDataListState extends State<DriverDataList> {
   List searchResult = [];
 
   final usersDataFromDatabase =
-      FirebaseDatabase.instance.ref().child("drivers");
+
+      // ignore: deprecated_member_use
+      FirebaseDatabase(databaseURL: flutterURL).ref().child("drivers");
 
   @override
   Widget build(BuildContext context) {

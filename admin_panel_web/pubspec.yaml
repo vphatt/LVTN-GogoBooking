@@ -43,6 +43,8 @@ dependencies:
   intl: ^0.18.1 #định dạng số
   url_launcher: ^6.2.1 #mở liên kết
   one_context: ^2.1.0
+  connectivity_plus: ^5.0.1 #kiem tra ket noi mang
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

@@ -153,7 +153,9 @@ class TripData extends DataTableSource {
                                   ElevatedButton(
                                     onPressed: () async {
                                       Navigator.pop(context);
-                                      await FirebaseDatabase.instance
+                                      // ignore: deprecated_member_use
+                                      await FirebaseDatabase(
+                                              databaseURL: flutterURL)
                                           .ref()
                                           .child("tripRequests")
                                           .child(dataList[index]["tripId"])
@@ -204,7 +206,8 @@ class _TripDataListState extends State<TripDataList> {
   List searchResult = [];
 
   final usersDataFromDatabase =
-      FirebaseDatabase.instance.ref().child("tripRequests");
+      // ignore: deprecated_member_use
+      FirebaseDatabase(databaseURL: flutterURL).ref().child("tripRequests");
 
   @override
   Widget build(BuildContext context) {
