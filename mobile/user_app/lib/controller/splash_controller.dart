@@ -13,7 +13,6 @@ import 'package:user_app/pages/home_page.dart';
 
 import '../authentication/login_screen.dart';
 import '../global/global_var.dart';
-import '../utils/my_notification.dart';
 
 class SplashController extends GetxController {
   // var latitute = ''.obs;
@@ -37,10 +36,6 @@ class SplashController extends GetxController {
           await Permission.storage.request().isGranted &&
           await Permission.location.request().isGranted &&
           await Permission.phone.request().isGranted) {
-        //Thong bao
-        MyNotification.getFcmToken();
-        MyNotification.getMessageInBackground();
-        MyNotification.getMessageInForeground(context);
         //Chay ung dung
         _launchScreen(context); //_getCurrentLocation(context);
       } else {
@@ -60,10 +55,6 @@ class SplashController extends GetxController {
           await Permission.photos.request().isGranted &&
           await Permission.location.request().isGranted &&
           await Permission.phone.request().isGranted) {
-        //Thong bao
-        MyNotification.getFcmToken();
-        MyNotification.getMessageInBackground();
-        MyNotification.getMessageInForeground(context);
         //Chay ung dung
         _launchScreen(context); //_getCurrentLocation(context);
       } else {
@@ -73,17 +64,6 @@ class SplashController extends GetxController {
     }
   }
 
-  // Future<Position> _getCurrentLocation(BuildContext context) async {
-  //   Position position = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: LocationAccuracy.high);
-  //   if (position.latitude != 0 && position.longitude != 0) {
-  //     print('Vi do: ${position.latitude}, Kinh do: ${position.longitude}');
-  //     latitute.value = position.latitude.toString();
-  //     logitude.value = position.longitude.toString();
-  //     _launchScreen(context);
-  //   }
-  //   return await Geolocator.getCurrentPosition();
-  // }
   Position? currentPositionOfUser;
 
   void _launchScreen(BuildContext context) async {

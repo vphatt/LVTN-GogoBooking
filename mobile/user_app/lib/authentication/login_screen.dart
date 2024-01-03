@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       cMethods.displaySnackbar("Vui lòng nhập đầy đủ thông tin", context);
-    } else if (!emailController.text.contains('@')) {
+    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(emailController.text)) {
       cMethods.displaySnackbar("Email không hợp lệ", context);
     } else if (passwordController.text.trim().length <= 5) {
       cMethods.displaySnackbar("Mật khẩu phải từ 6 kí tự trở lên", context);
@@ -53,21 +53,25 @@ class _LoginScreenState extends State<LoginScreen> {
           LoadingDialog(messageText: 'Đang đăng nhập...'),
     );
 
-    final User? userFirebase = (await FirebaseAuth.instance
-            .signInWithEmailAndPassword(
+    await FirebaseAuth.instance
+        .signInWithEmailAndPassword(
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
     )
-            // ignore: body_might_complete_normally_catch_error
-            .catchError((errorMsg) {
-      cMethods.displaySnackbar(errorMsg.toString(), context);
-    }))
-        .user;
+        // ignore: body_might_complete_normally_catch_error
+        .catchError((errorMsg) {
+      if (errorMsg.code == "INVALID_LOGIN_CREDENTIALS") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Thông tin đăng nhập không hợp lệ!", context);
+      }
+    });
 
+    final userFirebase = FirebaseAuth.instance.currentUser;
     if (!context.mounted) return;
     Navigator.pop(context);
 
     //Kiểm tra người dùng có tồn tại hay không
+
     if (userFirebase != null) {
       // ignore: deprecated_member_use
       DatabaseReference usersRef = FirebaseDatabase(databaseURL: flutterURL)

@@ -21,7 +21,5 @@ class DriverManagerMethod {
 
     activeNearbyDriverList[index].latDriver = activeNearbyDriverModel.latDriver;
     activeNearbyDriverList[index].lngDriver = activeNearbyDriverModel.lngDriver;
-    print(
-        'TAI XE DANG O VI TRI: ${activeNearbyDriverList[index].latDriver}, ${activeNearbyDriverList[index].lngDriver} ');
   }
 }

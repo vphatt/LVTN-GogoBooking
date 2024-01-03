@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:user_app/authentication/login_screen.dart';
 import 'package:user_app/global/global_var.dart';
 import 'package:user_app/methods/common_methods.dart';
@@ -29,6 +33,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   CommonMethods cMethods = CommonMethods();
 
+  //Bien lay hinh anh
+  XFile? imageFile;
+
+  String uploadImageURL = '';
+
   registrationProcess() {
     //Kiểm tra kết nối mạng
     cMethods.checkConnectivity(context);
@@ -47,7 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else if (usernameController.text.trim().length < 3) {
       cMethods.displaySnackbar(
           "Tên người dùng phải từ 4 kí tự trở lên", context);
-    } else if (!emailController.text.contains('@')) {
+    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(emailController.text)) {
       cMethods.displaySnackbar("Email không hợp lệ", context);
     } else if (phoneController.text.trim().length < 9 ||
         phoneController.text.trim().length > 10) {
@@ -59,8 +68,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
       cMethods.displaySnackbar("Mật khẩu xác nhận không khớp", context);
     } else {
       // Dang ky sau khi da xac thuc
-      registerUser();
+      uploadImagetoStorage();
     }
+  }
+
+  //Tải hình ảnh lên kho lưu trữ
+  uploadImagetoStorage() async {
+    String imageId = DateTime.now().toIso8601String();
+
+    Reference referenceImage = FirebaseStorage.instance
+        .ref()
+        .child("Images")
+        .child("UserAvt")
+        .child(imageId);
+
+    UploadTask uploadTask = referenceImage.putFile(File(imageFile!.path));
+
+    TaskSnapshot snapshot = await uploadTask;
+
+    uploadImageURL = await snapshot.ref.getDownloadURL();
+
+    setState(() {
+      uploadImageURL;
+    });
+
+    registerUser();
   }
 
   //Hàm tạo người dùng mới
@@ -79,7 +111,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     )
             // ignore: body_might_complete_normally_catch_error
             .catchError((errorMsg) {
-      cMethods.displaySnackbar(errorMsg.toString(), context);
+      if (errorMsg.code == "email-already-in-use") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Email này đã tồn tại!", context);
+      } else if (errorMsg.code == "weak-password") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Mật khẩu quá yếu!", context);
+      }
     }))
         .user;
 
@@ -96,6 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       "email": emailController.text.trim(),
       "phone": phoneController.text.trim(),
       "id": userFirebase.uid,
+      "avatar": uploadImageURL,
       "blockStatus": "no" //Tinh trang tai khoan co bi khoa hay khong
     };
     usersRef.set(userDataMap); //lưu thông tin và database
@@ -106,6 +145,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MaterialPageRoute(
           builder: (context) => const HomePage(),
         ));
+  }
+
+  //Hàm chọn hình ảnh từ thư viện ảnh của thiết bị
+  selectImageFromGallery() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        imageFile = pickedFile;
+      });
+    }
   }
 
   @override
@@ -155,11 +206,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Center(
                       child: Text(
                         'NHẬP THÔNG TIN ĐĂNG KÝ',
-                        style: TextStyle(color: MyColor.white, fontSize: 30),
+                        style: TextStyle(color: MyColor.white, fontSize: 25),
                       ),
                     ),
                   ),
 
+                  //Ảnh khách hàng
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Stack(
+                      children: [
+                        imageFile == null
+                            ? //Nếu người dùng chưa chọn hình ảnh
+                            const CircleAvatar(
+                                radius: 60,
+                                backgroundImage: NetworkImage(
+                                    "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/user_profile.png?alt=media&token=afd72318-033b-4468-90e8-30ced957e3d6"),
+                              )
+                            : CircleAvatar(
+                                radius: 60,
+                                backgroundImage:
+                                    FileImage(File(imageFile!.path)),
+                              ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: MyColor.white,
+                              child: IconButton(
+                                  onPressed: () {
+                                    selectImageFromGallery();
+                                  },
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: MyColor.green,
+                                  ))),
+                        )
+                      ],
+                    ),
+                  ),
                   //Ten nguoi dung
                   Padding(
                     padding: const EdgeInsets.all(8.0),

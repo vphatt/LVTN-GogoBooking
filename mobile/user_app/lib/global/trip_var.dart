@@ -1,9 +1,11 @@
 //Thông tin về chuyến đi
 
-String driverName = "";
-String driverAvt = "";
-String driverPhone = "";
-int driverRequestTimeOut = 30;
-String driverStatus = "";
-String driverCarDetail = "";
-String tripStatusText = "Tài xế đang đến";
+String driverNameTV = "";
+String driverAvtTV = "";
+String driverPhoneTV = "";
+int driverRequestTimeOutTV = 30;
+String driverStatusTV = "";
+String driverCarDetailTV = "";
+String driverPointTV = "";
+String tripStatusTextTV = "Tài xế đang đến";
+String tripIdTV = "";

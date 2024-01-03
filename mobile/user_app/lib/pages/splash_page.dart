@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:user_app/controller/splash_controller.dart';
 import 'package:user_app/utils/my_color.dart';
-//import 'package:user_app/constants/notification/notification_custom.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

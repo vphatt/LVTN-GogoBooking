@@ -48,6 +48,7 @@ dependencies:
   firebase_messaging: ^14.6.8 #gui tin nhan, thong diep qua dam may
   flutter_local_notifications: ^15.1.1 #tao thong bao cuc bo
   provider: ^6.0.5
+  image_picker: ^1.0.4 #lay hinh anh
   intl: ^0.18.1 #định dạng số
   flutter_polyline_points: ^2.0.0 #Vẽ đường đi trên bản đồ
   loading_animation_widget: ^1.2.0+4 #hiệu ứng loading
@@ -55,6 +56,8 @@ dependencies:
   restart_app: ^1.2.1 #Khởi động lại ứng dụng
   timelines: ^0.1.0 #timeline
   url_launcher: ^6.2.1 #mở liên kết
+  smooth_star_rating_null_safety: ^1.0.4+2
+  flutter_rating_bar: ^4.0.1
 
 dev_dependencies:
   flutter_test:

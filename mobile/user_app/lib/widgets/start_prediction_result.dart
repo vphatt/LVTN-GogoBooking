@@ -35,6 +35,7 @@ class _StartPredictionResultState extends State<StartPredictionResult> {
     var responseFromPlaceAPI =
         await CommonMethods.sendRequestToAPI(urlPlaceDetail);
 
+    // ignore: use_build_context_synchronously
     Navigator.pop(context);
 
     if (responseFromPlaceAPI == "error") {
@@ -52,7 +53,7 @@ class _StartPredictionResultState extends State<StartPredictionResult> {
       address.longitude =
           responseFromPlaceAPI["result"]["geometry"]["location"]["lng"];
 
-      //Provider.of<AppInfo>(context, listen: false).updateStartLocation(address);
+      // ignore: use_build_context_synchronously
       Provider.of<AppInfo>(context, listen: false).updateStartLocation(address);
       //Navigator.pop(context, "placeSelected");
     }

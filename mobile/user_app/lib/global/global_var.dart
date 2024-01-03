@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 //Thông tin user lưu toàn cục
 String userNameGB = '';
+String userAvtGB = '';
 String userPhoneGB = '';
 String userEmailGB = '';
 String userIdGB = FirebaseAuth.instance.currentUser!.uid;
@@ -12,8 +13,8 @@ String flutterURL =
     "https://gogobooking-5ade1-default-rtdb.asia-southeast1.firebasedatabase.app";
 String googleMapKey = "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ";
 
-String goongMapKey =
-    "eQJSWRSq3Cqe3Q5ZDaEzRqGf2dm7NohpKVzyytEb"; // "ciMkBVsvm2gHKuNxcvVRI1EGpQyi8KkbcikBSix7"; // "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
+String goongMapKey = "";
+//"eQJSWRSq3Cqe3Q5ZDaEzRqGf2dm7NohpKVzyytEb"; // "ciMkBVsvm2gHKuNxcvVRI1EGpQyi8KkbcikBSix7"; // "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
 
 String serverKeyFCM =
     "key=AAAAZLxD70c:APA91bFf6AAnpbvSTzqr2BVV5cam1COrsa1hi-mfz2x3qWi24il0ClUjKzLgFzSmyZzIFEvUNwobctXYNvrzlib_Q3Do1Nf8Fg5cnoc-Ddu_xk5t7wo1qiIe81AOGxDor_nb8XXBTiOA";
@@ -21,3 +22,11 @@ String serverKeyFCM =
 LatLng? initialCurrentUserLatLng = const LatLng(0, 0);
 
 final formatVND = NumberFormat("###,###,###");
+
+double distancePerKmUnder30Amount = 0;
+
+//Giá mở cửa
+double openDoorAmount = 0;
+
+//Giá xe khi quãng đường trên 30km
+double distancePerKmOver30Amount = 0;

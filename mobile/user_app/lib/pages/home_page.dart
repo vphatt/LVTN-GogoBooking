@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -19,6 +20,7 @@ import 'package:user_app/methods/driver_manager_method.dart';
 import 'package:user_app/methods/push_notification_methods.dart';
 import 'package:user_app/models/active_nearby_driver_model.dart';
 import 'package:user_app/models/direction_model.dart';
+import 'package:user_app/pages/edit_profile_screen.dart';
 import 'package:user_app/pages/history_trip_page.dart';
 import 'package:user_app/pages/search_page.dart';
 import 'package:user_app/utils/app_info.dart';
@@ -93,9 +95,62 @@ class _HomePageState extends State<HomePage> {
 
   bool requestingDirectionDetail = false;
 
+  var rating = 5.0;
+  String commentText = "";
+  TextEditingController rateTextController = TextEditingController();
+
+  updateEmailUser() async {
+    DatabaseReference userRef = FirebaseDatabase.instance
+        .ref()
+        .child("users")
+        .child(FirebaseAuth.instance.currentUser!.uid);
+
+    await userRef.update({
+      "email": FirebaseAuth.instance.currentUser!.email,
+    });
+
+    setState(() {
+      userEmailGB = FirebaseAuth.instance.currentUser!.email!;
+    });
+
+    DatabaseReference fareTripRef =
+        FirebaseDatabase.instance.ref().child("fareTrip");
+
+    await fareTripRef.once().then((snap) {
+      setState(() {
+        openDoorAmount =
+            double.parse((snap.snapshot.value! as Map)["openDoor"].toString());
+        distancePerKmUnder30Amount =
+            double.parse((snap.snapshot.value! as Map)["under30km"].toString());
+        distancePerKmOver30Amount =
+            double.parse((snap.snapshot.value! as Map)["over30km"].toString());
+      });
+    });
+  }
+
+  getGoongMapAPI() async {
+    DatabaseReference apiRef =
+        FirebaseDatabase.instance.ref().child("apiKey").child("goongMap");
+
+    await apiRef.once().then((snap) {
+      setState(() {
+        goongMapKey = (snap.snapshot.value! as Map)["key"].toString();
+      });
+    });
+  }
+
+  void onValueChange() {
+    setState(() {
+      rateTextController.text;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    rateTextController.addListener(onValueChange);
+    getGoongMapAPI();
+    updateEmailUser();
     //Gán icon điểm đầu
     BitmapDescriptor.fromAssetImage(
             const ImageConfiguration(), 'assets/images/starthererz.png')
@@ -112,7 +167,7 @@ class _HomePageState extends State<HomePage> {
 
     //Gán icon xe
     BitmapDescriptor.fromAssetImage(
-            const ImageConfiguration(), "assets/images/car_icon.png")
+            const ImageConfiguration(), "assets/images/carhererz.png")
         .then((iconCar) {
       carDriverIcon = iconCar;
     });
@@ -157,7 +212,8 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             userNameGB = (snap.snapshot.value as Map)['name'];
             userPhoneGB = (snap.snapshot.value as Map)['phone'];
-            userEmailGB = (snap.snapshot.value as Map)['email'];
+            // userEmailGB = (snap.snapshot.value as Map)['email'];
+            userAvtGB = (snap.snapshot.value as Map)['avatar'];
           });
         } else {
           FirebaseAuth.instance.signOut();
@@ -305,13 +361,39 @@ class _HomePageState extends State<HomePage> {
       requestBoxHeight = 0;
       tripBoxHeight = 0;
 
-      driverStatus = "";
-      driverName = "";
-      driverAvt = "";
-      driverPhone = "";
-      driverCarDetail = "";
-      tripStatusText = "Tài xế đang đến";
+      tripIdTV = "";
+      commentText = "";
+      driverStatusTV = "";
+      driverNameTV = "";
+      driverAvtTV = "";
+      driverPhoneTV = "";
+      driverCarDetailTV = "";
+      tripStatusTextTV = "Tài xế đang đến";
     });
+    //Restart.restartApp();
+  }
+
+  cancelTripRequestDetailButtonClose() {
+    setState(() {
+      polylineLatLng.clear();
+      polylineSet.clear();
+      markerSet.clear();
+      tripDirectionDetail = null;
+      tripDetailHeight = 0;
+      bottomMapPadding = 100;
+      requestBoxHeight = 0;
+      tripBoxHeight = 0;
+
+      tripIdTV = "";
+      commentText = "";
+      driverStatusTV = "";
+      driverNameTV = "";
+      driverAvtTV = "";
+      driverPhoneTV = "";
+      driverCarDetailTV = "";
+      tripStatusTextTV = "Tài xế đang đến";
+    });
+    Restart.restartApp();
   }
 
   //Hộp thoại yêu cầu xe
@@ -355,6 +437,12 @@ class _HomePageState extends State<HomePage> {
       "longitude": "",
     };
 
+    //danh gia cua khach hang
+    Map ratingMap = {
+      "rateStar": 0.0,
+      "comment": "",
+    };
+
     Map dataMap = {
       "tripId": tripRequestRef!.key,
       "userId": userIdGB,
@@ -368,7 +456,7 @@ class _HomePageState extends State<HomePage> {
       "distance": tripDirectionDetail!.distanceText!,
       "tripAmount":
           cMethods.calculateFareAmount(tripDirectionDetail!).toString(),
-      "actualFareAmount": "",
+      "actualFareAmount": 0.0,
       "actualDistanceMoved": "",
 
       //tình trạng: khởi tạo, đang thực hiện và đã hoàn thành,...
@@ -379,11 +467,15 @@ class _HomePageState extends State<HomePage> {
       "driverName": "",
       "driverPhone": "",
       "driverAvt": "",
+      "driverPoint": "",
       "carDetail": "",
       "driverLocation": driverLatLngMap,
+
+      "rating": ratingMap,
     };
 
     tripRequestRef!.set(dataMap);
+    tripIdTV = tripRequestRef!.key!;
 
     //Lắng nghe sự kiện, xem đã có tài xế chấp nhận yêu cầu hay chưa
     tripStreamSubscription =
@@ -393,19 +485,22 @@ class _HomePageState extends State<HomePage> {
       }
 
       if ((eventSnapshot.snapshot.value as Map)["driverName"] != null) {
-        driverName = (eventSnapshot.snapshot.value as Map)["driverName"];
+        driverNameTV = (eventSnapshot.snapshot.value as Map)["driverName"];
       }
       if ((eventSnapshot.snapshot.value as Map)["driverPhone"] != null) {
-        driverPhone = (eventSnapshot.snapshot.value as Map)["driverPhone"];
+        driverPhoneTV = (eventSnapshot.snapshot.value as Map)["driverPhone"];
       }
       if ((eventSnapshot.snapshot.value as Map)["driverAvt"] != null) {
-        driverAvt = (eventSnapshot.snapshot.value as Map)["driverAvt"];
+        driverAvtTV = (eventSnapshot.snapshot.value as Map)["driverAvt"];
       }
       if ((eventSnapshot.snapshot.value as Map)["carDetail"] != null) {
-        driverCarDetail = (eventSnapshot.snapshot.value as Map)["carDetail"];
+        driverCarDetailTV = (eventSnapshot.snapshot.value as Map)["carDetail"];
+      }
+      if ((eventSnapshot.snapshot.value as Map)["driverPoint"] != null) {
+        driverPointTV = (eventSnapshot.snapshot.value as Map)["driverPoint"];
       }
       if ((eventSnapshot.snapshot.value as Map)["status"] != null) {
-        driverStatus = (eventSnapshot.snapshot.value as Map)["status"];
+        driverStatusTV = (eventSnapshot.snapshot.value as Map)["status"];
       }
       if ((eventSnapshot.snapshot.value as Map)["driverLocation"] != null) {
         double driverLatitude = double.parse(
@@ -420,21 +515,21 @@ class _HomePageState extends State<HomePage> {
             LatLng(driverLatitude, driverLongitude);
 
         //Lắng nghe trạng thái yêu cầu
-        if (driverStatus == "accepted") {
+        if (driverStatusTV == "accepted") {
           //Cập nhật thông tin từ tài xế đến điểm đón
           updateFromDriverCurrentLocationToStart(driverCurrentLocationLatLng);
-        } else if (driverStatus == "arrived") {
+        } else if (driverStatusTV == "arrived") {
           //Cập nhật rằng ti xế đã đến
           setState(() {
-            tripStatusText = "Tài xế đã đến rồi!";
+            tripStatusTextTV = "Tài xế đã đến rồi!";
           });
-        } else if (driverStatus == "onTrip") {
+        } else if (driverStatusTV == "onTrip") {
           //Cập nhật thông tin từ tài xế đến điểm trả
           updateFromDriverCurrentLocationToEnd(driverCurrentLocationLatLng);
         }
       }
 
-      if (driverStatus == "accepted") {
+      if (driverStatusTV == "accepted") {
         showTripDetailContainer();
 
         Geofire.stopListener();
@@ -446,8 +541,8 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      if (driverStatus == "ended") {
-        if ((eventSnapshot.snapshot.value as Map)["actualFareAmount"] != null) {
+      if (driverStatusTV == "ended") {
+        if ((eventSnapshot.snapshot.value as Map)["actualFareAmount"] != 0.0) {
           double actualFareAmount = double.parse(
               (eventSnapshot.snapshot.value as Map)["actualFareAmount"]
                   .toString());
@@ -459,25 +554,219 @@ class _HomePageState extends State<HomePage> {
           var responeFromPaymentDialog = await showDialog(
               context: context,
               builder: (BuildContext context) => PaymentDialog(
-                    actualFareAmount: actualFareAmount.toString(),
+                    actualFareAmount: actualFareAmount,
                     userName: userNameGB,
                     actualDistanceText: actualDistance,
                   ));
 
           if (responeFromPaymentDialog == "paid") {
-            tripRequestRef!.onDisconnect();
-            tripRequestRef = null;
-
-            tripStreamSubscription!.cancel();
-            tripStreamSubscription = null;
-
-            cancelTripRequestDetail();
-
-            Restart.restartApp();
+            // ignore: use_build_context_synchronously
+            Navigator.pop(context);
+            showRatingDialog();
           }
         }
       }
     });
+  }
+
+  //Hiện bảng đánh giá
+  showRatingDialog() {
+    final screenSize = MediaQuery.of(context).size;
+    return showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        surfaceTintColor: MyColor.white,
+        title: Text(
+          "Cảm ơn bạn đã sử dụng dịch vụ",
+          style: TextStyle(fontSize: screenSize.width / 25),
+          textAlign: TextAlign.center,
+        ),
+        content: SizedBox(
+          width: 500,
+          //color: MyColor.white,
+          child: Wrap(
+            children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: CircleAvatar(
+                      radius: screenSize.width / 8,
+                      backgroundImage: NetworkImage(driverAvtTV),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(driverNameTV,
+                        style: TextStyle(
+                            fontSize: screenSize.width / 25,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(driverCarDetailTV,
+                        style: TextStyle(
+                          fontSize: screenSize.width / 25,
+                        )),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      "Vui lòng để lại đánh giá của bạn về chuyến đi này",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  RatingBar.builder(
+                    initialRating: 5,
+                    minRating: 1,
+                    direction: Axis.horizontal,
+                    allowHalfRating: false,
+                    itemCount: 5,
+                    itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    itemBuilder: (context, _) => const Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                    ),
+                    onRatingUpdate: (value) {
+                      setState(() {
+                        //value = 5;
+                        rating = 5.0;
+                      });
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: TextField(
+                      controller: rateTextController,
+                      maxLines: 3,
+                      maxLength: 200,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15)),
+                        hintText: "Nhận xét của bạn (không bắt buộc)",
+                        counterStyle:
+                            const TextStyle(color: MyColor.green, fontSize: 18),
+                      ),
+                      buildCounter: (context,
+                              {required int currentLength,
+                              required isFocused,
+                              maxLength}) =>
+                          Text('$currentLength/$maxLength'),
+                      onChanged: (value) {
+                        setState(() {
+                          commentText = value;
+                        });
+                      },
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      ratingUpdate();
+
+                      // ignore: use_build_context_synchronously
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: MyColor.green,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5))),
+                    child: const Padding(
+                      padding: EdgeInsets.all(1),
+                      child: Text(
+                        "ĐÁNH GIÁ",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: MyColor.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  //Cập nhật đánh giá
+  ratingUpdate() async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) =>
+            LoadingDialog(messageText: "Đang lưu nhận xét..."));
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(tripIdTV)
+        .child("rating")
+        .child("rateStar")
+        .set(rating);
+
+    await FirebaseDatabase.instance
+        .ref()
+        .child("tripRequests")
+        .child(tripIdTV)
+        .child("rating")
+        .child("comment")
+        .set(commentText);
+
+    // ignore: use_build_context_synchronously
+    Navigator.pop(context);
+
+    // ignore: use_build_context_synchronously
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text("Đánh giá tài xế"),
+        content: const Wrap(
+          children: [
+            SizedBox(
+              //color: MyColor.white,
+              child: Column(
+                children: [
+                  Text("Đánh giá của bạn đã được ghi lại!",
+                      style: TextStyle(
+                        fontSize: 20,
+                      )),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              tripRequestRef!.onDisconnect();
+              tripRequestRef = null;
+
+              tripStreamSubscription!.cancel();
+              tripStreamSubscription = null;
+
+              cancelTripRequestDetail();
+
+              Restart.restartApp();
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: MyColor.green,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5))),
+            child: const Padding(
+              padding: EdgeInsets.all(1),
+              child: Text(
+                "KẾT THÚC",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: MyColor.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   showTripDetailContainer() {
@@ -506,7 +795,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       setState(() {
-        tripStatusText =
+        tripStatusTextTV =
             "Tài xế sẽ đến sau ${directionDetailStart.durationText}";
       });
 
@@ -533,7 +822,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       setState(() {
-        tripStatusText = "Tới nơi trong ${directionDetailEnd.durationText}";
+        tripStatusTextTV = "Tới nơi trong ${directionDetailEnd.durationText}";
       });
 
       requestingDirectionDetail = false;
@@ -687,17 +976,18 @@ class _HomePageState extends State<HomePage> {
           return;
         }
 
+        // ignore: unused_local_variable
         var countDown = Timer.periodic(
           const Duration(seconds: 1),
           (timer) {
-            driverRequestTimeOut--;
+            driverRequestTimeOutTV--;
 
             //Nếu yêu cầu bị huỷ
             if (stateOfTrip != "requesting") {
               timer.cancel();
               nearestSelectedDriverRef.set("cancelled");
               nearestSelectedDriverRef.onDisconnect();
-              driverRequestTimeOut = 30;
+              driverRequestTimeOutTV = 30;
             }
 
             //Khi tài xế gần nhất chấp nhận yêu cầu
@@ -706,17 +996,17 @@ class _HomePageState extends State<HomePage> {
                 if (dataSnapshot.snapshot.value.toString() == "accepted") {
                   timer.cancel();
                   nearestSelectedDriverRef.onDisconnect();
-                  driverRequestTimeOut = 30;
+                  driverRequestTimeOutTV = 30;
                 }
               },
             );
 
             //Khi qua 30 giây mà tài xế không phản hồi, gửi đến tài xế khác
-            if (driverRequestTimeOut == 0) {
+            if (driverRequestTimeOutTV == 0) {
               nearestSelectedDriverRef.set("timeout");
               timer.cancel();
               nearestSelectedDriverRef.onDisconnect();
-              driverRequestTimeOut = 30;
+              driverRequestTimeOutTV = 30;
 
               //Gửi yêu cầu đến tài xế khác gần tiếp theo
               searchDriverForTrip();
@@ -749,12 +1039,11 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: MyColor.white,
             child: Column(
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(15),
+                Padding(
+                  padding: const EdgeInsets.all(15),
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundImage: NetworkImage(
-                        "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/user_profile.png?alt=media&token=afd72318-033b-4468-90e8-30ced957e3d6"),
+                    backgroundImage: NetworkImage(userAvtGB),
                   ),
                 ),
                 Text(
@@ -780,7 +1069,13 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.only(
                       left: 15, right: 15, bottom: 15, top: 15),
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  const EditProfileScreen()));
+                    },
                     child: const ListTile(
                       leading: Icon(
                         Icons.person,
@@ -970,7 +1265,7 @@ class _HomePageState extends State<HomePage> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: (tripDirectionDetail != null && driverName == "")
+                child: (tripDirectionDetail != null && driverNameTV == "")
                     ? Container(
                         decoration: const BoxDecoration(
                           color: MyColor.white,
@@ -1015,9 +1310,9 @@ class _HomePageState extends State<HomePage> {
                                         children: [
                                           TextSpan(
                                             text: (tripDirectionDetail != null)
-                                                ? formatVND.format(double.parse(
-                                                    cMethods.calculateFareAmount(
-                                                        tripDirectionDetail!)))
+                                                ? formatVND.format(cMethods
+                                                    .calculateFareAmount(
+                                                        tripDirectionDetail!))
                                                 : "0",
                                             style: const TextStyle(
                                                 fontSize: 25,
@@ -1039,7 +1334,7 @@ class _HomePageState extends State<HomePage> {
                                     //Nút ẩn chi tiết, huỷ thông tin đã chọn
                                     IconButton(
                                         onPressed: () {
-                                          cancelTripRequestDetail();
+                                          cancelTripRequestDetailButtonClose();
                                         },
                                         icon: const Icon(Icons.close))
                                   ],
@@ -1286,7 +1581,7 @@ class _HomePageState extends State<HomePage> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: driverName != ""
+                child: driverNameTV != ""
                     ? Container(
                         //height: tripDetailHeight,
                         decoration: const BoxDecoration(
@@ -1309,7 +1604,7 @@ class _HomePageState extends State<HomePage> {
                               padding: const EdgeInsets.symmetric(vertical: 20),
                               child: Center(
                                 child: Text(
-                                  tripStatusText,
+                                  tripStatusTextTV,
                                   style: const TextStyle(
                                     fontSize: 20,
                                     color: MyColor.green,
@@ -1333,11 +1628,11 @@ class _HomePageState extends State<HomePage> {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(20),
                                     child: Image.network(
-                                      driverAvt == ""
+                                      driverAvtTV == ""
                                           ? "https://firebasestorage.googleapis.com/v0/b/gogobooking-5ade1.appspot.com/o/driver_profile.png?alt=media&token=bc53e4fe-5c07-46c4-9021-6d2bfd06a996"
-                                          : driverAvt,
-                                      height: 80,
-                                      width: 80,
+                                          : driverAvtTV,
+                                      height: 70,
+                                      width: 70,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -1346,20 +1641,22 @@ class _HomePageState extends State<HomePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      driverName,
+                                      driverNameTV,
                                       style: const TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     Text(
-                                      driverCarDetail,
+                                      driverCarDetailTV,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontSize: 18,
                                       ),
                                     ),
                                     Text(
-                                      "Xep hang sao",
+                                      "$driverPointTV ⭐",
                                       style: const TextStyle(
                                         fontSize: 18,
                                       ),
@@ -1369,11 +1666,11 @@ class _HomePageState extends State<HomePage> {
                                 const Spacer(),
                                 Padding(
                                   padding: const EdgeInsets.only(
-                                      top: 10, left: 10, right: 20, bottom: 10),
+                                      top: 10, left: 10, right: 10, bottom: 10),
                                   child: ElevatedButton(
                                     onPressed: () {
                                       launchUrl(
-                                          Uri.parse("tel://$driverPhone"));
+                                          Uri.parse("tel://$driverPhoneTV"));
                                     },
                                     style: ButtonStyle(
                                       shape: MaterialStateProperty.all(
@@ -1387,7 +1684,7 @@ class _HomePageState extends State<HomePage> {
                                     child: const Icon(
                                       Icons.phone,
                                       color: MyColor.white,
-                                      size: 25,
+                                      size: 15,
                                     ),
                                   ),
                                 ),

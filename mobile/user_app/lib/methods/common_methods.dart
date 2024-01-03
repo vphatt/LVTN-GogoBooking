@@ -4,7 +4,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:user_app/models/address_model.dart';
 import 'package:user_app/models/direction_model.dart';
@@ -44,7 +43,7 @@ class CommonMethods {
       ),
       content: Text(
         message,
-        style: const TextStyle(color: MyColor.black),
+        style: const TextStyle(color: MyColor.black, fontSize: 18),
       ),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
@@ -180,11 +179,20 @@ class CommonMethods {
   }
 
   //Tính tiền xe
-  calculateFareAmount(DirectionModel directionModel) {
-    double distancePerKmUnder30Amount =
-        11000; //Giá xe khi quãng đường dưới 30km
-    double openDoorAmount = 9000; //Giá mở cửa
-    double distancePerKmOver30Amount = 9500; //Giá xe khi quãng đường trên 30km
+  // DatabaseReference fareTripRef =
+  //     FirebaseDatabase.instance.ref().child("fareTrip");
+
+  double calculateFareAmount(DirectionModel directionModel) {
+    //Giá xe khi quãng đường dưới 30km
+
+    // fareTripRef.once().then((snap) {
+    //   openDoorAmount =
+    //       double.parse((snap.snapshot.value! as Map)["openDoor"].toString());
+    //   distancePerKmUnder30Amount =
+    //       double.parse((snap.snapshot.value! as Map)["under30km"].toString());
+    //   distancePerKmOver30Amount =
+    //       double.parse((snap.snapshot.value! as Map)["over30km"].toString());
+    // });
 
     double fareAmount = 0;
     if ((directionModel.distanceValue! / 1000) <= 1) {
@@ -193,11 +201,12 @@ class CommonMethods {
         (directionModel.distanceValue! / 1000) <= 30) {
       fareAmount =
           (directionModel.distanceValue! / 1000) * distancePerKmUnder30Amount;
-    } else {
+    } else if ((directionModel.distanceValue! / 1000) > 30) {
       fareAmount = (30 * distancePerKmUnder30Amount) +
           ((directionModel.distanceValue! / 1000) * distancePerKmOver30Amount);
     }
-    final format = NumberFormat("#########");
-    return format.format(fareAmount);
+    //final format = NumberFormat("#########");
+    //return format.format(fareAmount);
+    return fareAmount;
   }
 }

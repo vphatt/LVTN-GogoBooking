@@ -167,12 +167,13 @@ class _SearchPageState extends State<SearchPage> {
                             _timer = Timer(const Duration(seconds: 1), () {
                               searchStartLocation(value);
                             });
+
                             // Future.delayed(const Duration(seconds: 2), () {
                             //   searchStartLocation(value);
                             // });
                           },
                           decoration: InputDecoration(
-                              hintText: 'Vị trí đầu',
+                              hintText: 'Điểm đón',
                               filled: true,
                               fillColor: MyColor.white,
                               hintStyle: const TextStyle(
@@ -199,11 +200,11 @@ class _SearchPageState extends State<SearchPage> {
                                           await CommonMethods.getCurrentPlaceID(
                                               context, currentPositionOfUser!);
                                       placeIDCurrent = placeId;
-                                      
+
+                                      // ignore: use_build_context_synchronously
                                       CommonMethods.placeCurrentDetail(
                                           context, placeIDCurrent);
                                       startController.text = addr;
-                                      
                                     },
                                     icon: const Text(
                                       'Tại đây',
@@ -239,7 +240,7 @@ class _SearchPageState extends State<SearchPage> {
                           });
                         },
                         decoration: InputDecoration(
-                          hintText: 'Vị trí đích',
+                          hintText: 'Điểm trả',
                           filled: true,
                           fillColor: MyColor.white,
                           hintStyle: const TextStyle(
@@ -284,6 +285,9 @@ class _SearchPageState extends State<SearchPage> {
                                 return StartPredictionResult(
                                   predictionModel: startPredictionList[index],
                                 );
+                                // return StartPredictionResult(
+                                //   predictionModel: startPredictionList[index],
+                                // );
                               },
                               separatorBuilder:
                                   (BuildContext context, int index) =>
@@ -307,7 +311,7 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             ),
                     )
-                  : SizedBox(),
+                  : const SizedBox(),
             ],
           ),
         ),

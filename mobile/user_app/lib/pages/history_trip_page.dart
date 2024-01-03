@@ -3,10 +3,10 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timelines/timelines.dart';
+import 'package:user_app/pages/detail_trip_history_screen.dart';
 
 import '../global/global_var.dart';
 import '../utils/my_color.dart';
-import '../widgets/loading_dialog.dart';
 
 class HistoryTripPage extends StatefulWidget {
   const HistoryTripPage({super.key});
@@ -23,10 +23,13 @@ class _HistoryTripPageState extends State<HistoryTripPage> {
 
   List tripCompleted = [];
 
+  String requestDateTime = "";
+  double actualFareAmount = 0.0;
+
   //Lấy thông tin của những chuyến đã hoàn thành
   getInfoOfCompletedTrips() async {
     //Lấy tổng số chuyến được yêu cầu, tại đây lấy cả chuyến của tài xế khác
-    await tripCompletedRef.once().then(
+    await tripCompletedRef.orderByChild("requestDateTime").once().then(
       (snap) async {
         if (snap.snapshot.value != null) {
           Map allTripMap = snap.snapshot.value as Map;
@@ -37,8 +40,7 @@ class _HistoryTripPageState extends State<HistoryTripPage> {
           List completedTripsOfCurrentDriver = [];
 
           allTripMap.forEach((key, value) {
-            if (value["status"] != "initial" &&
-                value["status"] == "ended" &&
+            if (value["status"] == "ended" &&
                 value["userId"] == FirebaseAuth.instance.currentUser!.uid) {
               completedTripsOfCurrentDriver.add({"key": key, ...value});
             }
@@ -64,48 +66,48 @@ class _HistoryTripPageState extends State<HistoryTripPage> {
     final screenSize = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-          appBar: AppBar(
-            toolbarHeight: 70,
-            elevation: 0.0,
-            iconTheme: const IconThemeData(color: MyColor.white),
-            centerTitle: true,
-            title: const Text(
-              'Lịch sử đặt xe',
-              style: TextStyle(color: MyColor.white),
-            ),
-            backgroundColor: MyColor.green,
+        appBar: AppBar(
+          toolbarHeight: 70,
+          elevation: 0.0,
+          iconTheme: const IconThemeData(color: MyColor.white),
+          centerTitle: true,
+          title: const Text(
+            'Lịch sử đặt xe',
+            style: TextStyle(color: MyColor.white),
           ),
-          body: Container(
-            height: double.infinity,
-            color: MyColor.green,
-            child: Column(
-              children: [
-                Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: screenSize.width / 20),
-                  child: Row(
-                    children: [
-                      const Text(
-                        "Số chuyển đã đặt: ",
-                        style: TextStyle(color: MyColor.white),
-                      ),
-                      Text(
-                        number,
-                        style: const TextStyle(
-                            color: MyColor.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20),
-                      ),
-                    ],
-                  ),
+          backgroundColor: MyColor.green,
+        ),
+        body: Container(
+          height: double.infinity,
+          color: MyColor.green,
+          child: Column(
+            children: [
+              Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: screenSize.width / 20),
+                child: Row(
+                  children: [
+                    const Text(
+                      "Số chuyển đã đặt: ",
+                      style: TextStyle(color: MyColor.white),
+                    ),
+                    Text(
+                      number,
+                      style: const TextStyle(
+                          color: MyColor.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),
+                  ],
                 ),
-                const Divider(
-                  color: MyColor.green,
-                  indent: 30,
-                  endIndent: 30,
-                ),
-                Expanded(
-                    child: StreamBuilder(
+              ),
+              const Divider(
+                color: MyColor.green,
+                indent: 30,
+                endIndent: 30,
+              ),
+              Expanded(
+                child: StreamBuilder(
                   stream: tripCompletedRef.onValue,
                   builder: (BuildContext context, snapshotData) {
                     if (snapshotData.hasError) {
@@ -126,140 +128,164 @@ class _HistoryTripPageState extends State<HistoryTripPage> {
                       );
                     }
 
+                    if (snapshotData.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: MyColor.white,
+                        ),
+                      );
+                    }
+
                     //Lấy toàn bộ dữ liệu chuyến đi
                     // Map dataTrips = snapshotData.data!.snapshot.value as Map;
                     // List dataTripsList = [];
                     // dataTrips.forEach((key, value) =>
                     //     dataTripsList.add({"key": key, ...dataTrips}));
                     return ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: tripCompleted.length,
-                        itemBuilder: ((context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: InkWell(
-                              onTap: () {
-                                List detail = tripCompleted[index];
-                              },
-                              child: Card(
-                                  elevation: 5,
-                                  surfaceTintColor: MyColor.grey,
-                                  child: Wrap(
-                                    //mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Flexible(
-                                        //flex: 3,
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: screenSize.width / 30,
-                                              vertical: screenSize.width / 50),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                DateFormat("kk:mm - dd/MM/yyyy")
-                                                    .format(DateTime.parse(
-                                                        tripCompleted[index][
-                                                            'requestDateTime'])),
-                                                style: const TextStyle(
-                                                    color: MyColor.green,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                              Text(
-                                                "${formatVND.format(double.parse(tripCompleted[index]['actualFareAmount'].toString()))} đ",
-                                                style: const TextStyle(
-                                                    color: MyColor.red,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: screenSize.width / 20),
-                                        child: Column(
-                                          children: [
-                                            //Điểm đón khách
-                                            TimelineTile(
-                                              nodePosition: 0,
-                                              contents: Container(
-                                                padding: EdgeInsets.all(
-                                                    screenSize.height / 90),
-                                                child: Text(
-                                                  tripCompleted[index]
-                                                          ['startAddress']
-                                                      .toString(),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    color: MyColor.black,
-                                                    fontSize:
-                                                        screenSize.height / 60,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              node: const TimelineNode(
-                                                indicator: DotIndicator(
-                                                  color: MyColor.transparent,
-                                                  child: Icon(
-                                                    Icons.my_location,
-                                                    color: MyColor.green,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
+                      shrinkWrap: true,
+                      itemCount: tripCompleted.length,
+                      scrollDirection: Axis.vertical,
+                      itemBuilder: ((context, index) {
+                        if (tripCompleted.isNotEmpty) {
+                          requestDateTime = DateFormat("kk:mm - dd/MM/yyyy")
+                              .format(DateTime.parse(
+                                  tripCompleted[index]['requestDateTime']));
 
-                                            //Điểm trả khách
-                                            TimelineTile(
-                                              nodePosition: 0,
-                                              contents: Container(
-                                                padding: EdgeInsets.all(
-                                                    screenSize.height / 90),
-                                                child: Text(
-                                                  tripCompleted[index]
-                                                          ['endAddress']
-                                                      .toString(),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    color: MyColor.black,
-                                                    fontSize:
-                                                        screenSize.height / 60,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                              node: const TimelineNode(
-                                                indicator: DotIndicator(
-                                                  color: MyColor.transparent,
-                                                  child: Icon(
-                                                    Icons.location_on,
-                                                    color: MyColor.red,
-                                                  ),
+                          actualFareAmount = double.parse(tripCompleted[index]
+                                  ['actualFareAmount']
+                              .toString());
+
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (BuildContext context) =>
+                                          DetailTripHistoryScreen(
+                                              tripId: tripCompleted[index]
+                                                      ["tripId"]
+                                                  .toString())));
+                            },
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 15),
+                              child: Card(
+                                elevation: 5,
+                                surfaceTintColor: MyColor.grey,
+                                child: Column(
+                                  //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: screenSize.width / 30,
+                                          vertical: screenSize.width / 50),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            requestDateTime,
+                                            style: const TextStyle(
+                                                color: MyColor.green,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            "${formatVND.format(actualFareAmount)} VNĐ",
+                                            style: const TextStyle(
+                                                color: MyColor.red,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: screenSize.width / 20),
+                                      child: Column(
+                                        children: [
+                                          //Điểm đón khách
+                                          TimelineTile(
+                                            nodePosition: 0,
+                                            contents: Container(
+                                              padding: EdgeInsets.all(
+                                                  screenSize.height / 90),
+                                              child: Text(
+                                                tripCompleted[index]
+                                                        ['startAddress']
+                                                    .toString(),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: MyColor.black,
+                                                  fontSize:
+                                                      screenSize.height / 60,
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                            node: const TimelineNode(
+                                              indicator: DotIndicator(
+                                                color: MyColor.transparent,
+                                                child: Icon(
+                                                  Icons.my_location,
+                                                  color: MyColor.green,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                          //Điểm trả khách
+                                          TimelineTile(
+                                            nodePosition: 0,
+                                            contents: Container(
+                                              padding: EdgeInsets.all(
+                                                  screenSize.height / 90),
+                                              child: Text(
+                                                tripCompleted[index]
+                                                        ['endAddress']
+                                                    .toString(),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: MyColor.black,
+                                                  fontSize:
+                                                      screenSize.height / 60,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            node: const TimelineNode(
+                                              indicator: DotIndicator(
+                                                color: MyColor.transparent,
+                                                child: Icon(
+                                                  Icons.location_on,
+                                                  color: MyColor.red,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      //Spacer(),
-                                    ],
-                                  )),
+                                    ),
+                                    //Spacer(),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
-                        }));
+                        }
+                        return null;
+                      }),
+                    );
                   },
-                )),
-              ],
-            ),
-          )),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
