@@ -1,4 +1,4 @@
-import 'package:admin_panel_web/authentication/register_screen.dart';
+import 'package:admin_panel_web/authentication/login_screen.dart';
 import 'package:admin_panel_web/methods/common_methods.dart';
 import 'package:admin_panel_web/utils/my_color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,87 +9,101 @@ import '../dashboard/side_navigation.dart';
 import '../utils/global_var.dart';
 import '../utils/loading_dialog.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmController = TextEditingController();
   bool _passwordVisible = false;
+  bool _confirmVisible = false;
 
   CommonMethods cMethods = CommonMethods();
 
-  ///Đăng nhập admin
-  loginProcess() {
+  registrationProcess() {
     cMethods.checkConnectivity(context);
-    loginFormValidation();
+
+    registerFormValidation();
   }
 
-  loginFormValidation() {
+  registerFormValidation() {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       cMethods.displaySnackbar("Vui lòng nhập đầy đủ thông tin", context);
+    } else if (nameController.text.trim().length < 3) {
+      cMethods.displaySnackbar(
+          "Tên người dùng phải từ 4 kí tự trở lên", context);
     } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(emailController.text)) {
       cMethods.displaySnackbar("Email không hợp lệ", context);
-    } else if (passwordController.text.trim().length <= 5) {
-      cMethods.displaySnackbar("Mật khẩu phải từ 6 kí tự trở lên", context);
+    } else if (passwordController.text.trim().length <= 4) {
+      cMethods.displaySnackbar("Mật khẩu phải từ 5 kí tự trở lên", context);
+    } else if (passwordController.text.trim() !=
+        confirmController.text.trim()) {
+      cMethods.displaySnackbar("Mật khẩu xác nhận không khớp", context);
     } else {
       // Dang ky sau khi da xac thuc
-      loginAdmin();
+      registerAdmin();
     }
   }
 
-  loginAdmin() async {
+  registerAdmin() async {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) =>
-          LoadingDialog(messageText: 'Đang đăng nhập...'),
+          LoadingDialog(messageText: 'Đăng ký tài khoản...'),
     );
 
-    await FirebaseAuth.instance
-        .signInWithEmailAndPassword(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    )
-        // ignore: body_might_complete_normally_catch_error
-        .catchError((errorMsg) {
-      if (errorMsg.code == "invalid-login-credentials") {
-        Navigator.pop(context);
-        cMethods.displaySnackbar("Thông tin đăng nhập không hợp lệ!", context);
-      }
-    });
+    final User? adminFirebase = (await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+                email: emailController.text.trim(),
+                password: passwordController.text.trim())
 
-    final adminFirebase = FirebaseAuth.instance.currentUser;
+            // ignore: body_might_complete_normally_catch_error
+            .catchError((errorMsg) {
+      // if(errorMsg is PlatformException) {
+      //   if(s)
+      // }
+      if (errorMsg.code == "email-already-in-use") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Email này đã tồn tại!", context);
+      } else if (errorMsg.code == "weak-password") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Mật khẩu quá yếu!", context);
+      }
+    }))
+        .user;
+
     if (!context.mounted) return;
     Navigator.pop(context);
 
-    if (adminFirebase != null) {
-      // ignore: deprecated_member_use
-      DatabaseReference usersRef = FirebaseDatabase(databaseURL: flutterURL)
-          .ref()
-          .child('admins')
-          .child(adminFirebase.uid);
-      usersRef.once().then((snap) {
-        if (snap.snapshot.value != null) {
-          //lấy tên của người dùng đã đăng nhập
-          adminEmail = (snap.snapshot.value as Map)['email'];
+    // ignore: deprecated_member_use
+    DatabaseReference adminRef = FirebaseDatabase(databaseURL: flutterURL)
+        .ref()
+        .child("admins")
+        .child(adminFirebase!.uid);
+    Map userDataMap = {
+      "email": emailController.text.trim(),
+      "id": adminFirebase.uid,
+      "name": nameController.text.trim(),
+    };
+    adminRef.set(userDataMap);
 
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SideNavigation(),
-              ));
-        } else {
-          FirebaseAuth.instance.signOut();
-          cMethods.displaySnackbar("Tài khoản không tồn tại!", context);
-        }
-      });
-    }
+    setState(() {
+      adminEmail = emailController.text.trim();
+    });
+
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SideNavigation(),
+        ));
   }
 
   @override
@@ -130,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "ADMIN LOGIN",
+                            "ADMIN REGISTER",
                             style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -160,6 +174,28 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           prefixIcon: Icon(Icons.email)),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: TextField(
+                      controller: nameController,
+                      keyboardType: TextInputType.text,
+                      style: const TextStyle(fontSize: 20),
+                      decoration: const InputDecoration(
+                        hintText: 'Họ và tên',
+                        filled: true,
+                        fillColor: MyColor.white,
+                        hintStyle: TextStyle(
+                          color: MyColor.grey,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(15),
+                          ),
+                        ),
+                        prefixIcon: Icon(Icons.person),
+                      ),
                     ),
                   ),
 
@@ -197,8 +233,41 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: TextField(
+                      controller: confirmController,
+                      keyboardType: TextInputType.text,
+                      obscureText: !_confirmVisible,
+                      style: const TextStyle(fontSize: 20),
+                      decoration: InputDecoration(
+                        hintText: 'Nhập lại mật khẩu',
+                        filled: true,
+                        fillColor: MyColor.white,
+                        hintStyle: const TextStyle(
+                          color: MyColor.grey,
+                        ),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(15),
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _confirmVisible = !_confirmVisible;
+                            });
+                          },
+                          icon: Icon(_confirmVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                        ),
+                      ),
+                    ),
+                  ),
 
-                  //Nut Dang nhap
+                  //Nut Dang ky
                   Padding(
                     padding: const EdgeInsets.all(15),
                     child: Center(
@@ -208,12 +277,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             //tiến hành đăng nhập
-                            loginProcess();
-                            //registrationProcess();
+                            //loginProcess();
+                            registrationProcess();
                           },
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.all(MyColor.green),
+                                MaterialStateProperty.all(MyColor.red),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               const RoundedRectangleBorder(
@@ -222,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          child: const Text('ĐĂNG NHẬP',
+                          child: const Text('ĐĂNG KÝ',
                               style: TextStyle(
                                   fontSize: 20, color: MyColor.white)),
                         ),
@@ -238,8 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.bold),
                     ),
                   ),
-
-                  //Nut Dang ky
+                  //Nut Dang nhap
                   Padding(
                     padding: const EdgeInsets.all(15),
                     child: Center(
@@ -252,13 +320,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen(),
+                                  builder: (context) => const LoginScreen(),
                                 ));
                             //registrationProcess();
                           },
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.all(MyColor.red),
+                                MaterialStateProperty.all(MyColor.green),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(
                               const RoundedRectangleBorder(
@@ -267,7 +335,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          child: const Text('ĐĂNG KÝ',
+                          child: const Text('ĐĂNG NHẬP',
                               style: TextStyle(
                                   fontSize: 20, color: MyColor.white)),
                         ),

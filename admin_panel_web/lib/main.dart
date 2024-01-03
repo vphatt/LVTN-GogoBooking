@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:admin_panel_web/authentication/login_screen.dart';
 import 'package:admin_panel_web/utils/global_var.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,12 +26,22 @@ void main() async {
   runApp(const MyApp());
 }
 
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  // Override behavior methods and getters like dragDevices
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scrollBehavior: MyCustomScrollBehavior(),
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Gogo Web Admin Panel',

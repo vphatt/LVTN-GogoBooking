@@ -20,7 +20,8 @@ class _OtherPageState extends State<OtherPage> {
   TextEditingController under30kmController = TextEditingController();
   TextEditingController over30kmController = TextEditingController();
 
-  TextEditingController apiController = TextEditingController();
+  TextEditingController goongMapApiController = TextEditingController();
+  TextEditingController googleMapApiController = TextEditingController();
 
   DatabaseReference fareTripRef =
       FirebaseDatabase(databaseURL: flutterURL).ref().child("fareTrip");
@@ -37,7 +38,8 @@ class _OtherPageState extends State<OtherPage> {
       FirebaseDatabase(databaseURL: flutterURL).ref().child("apiKey");
   getAPIKey() {
     apiKeyRef.once().then((snap) {
-      apiController.text = (snap.snapshot.value! as Map)["goongMap"]["key"];
+      goongMapApiController.text =
+          (snap.snapshot.value! as Map)["goongMap"]["key"];
     });
   }
 
@@ -64,8 +66,9 @@ class _OtherPageState extends State<OtherPage> {
                     columns: [
                       const DataColumn(
                         label: Text(
-                          "QUẢN LÝ GIÁ CƯỚC",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          "QUẢN LÝ TÀI NGUYÊN",
+                          style: TextStyle(
+                              fontSize: 25, fontWeight: FontWeight.bold),
                         ),
                       ),
                       DataColumn(
@@ -104,13 +107,21 @@ class _OtherPageState extends State<OtherPage> {
                                   ],
                                 ),
                               );
-                              await FirebaseDatabase(databaseURL: flutterURL)
+                              FirebaseDatabase(databaseURL: flutterURL)
                                   .ref()
                                   .child("fareTrip")
                                   .update({
                                 "openDoor": openDoorController.text,
                                 "under30km": under30kmController.text,
                                 "over30km": over30kmController.text,
+                              });
+
+                              FirebaseDatabase(databaseURL: flutterURL)
+                                  .ref()
+                                  .child("apiKey")
+                                  .child("goongMap")
+                                  .update({
+                                "key": goongMapApiController.text,
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -132,74 +143,113 @@ class _OtherPageState extends State<OtherPage> {
                       DataRow(
                         cells: [
                           DataCell(
-                            Container(
-                              width: 400,
-                              padding: const EdgeInsets.all(15),
-                              child: Form(
-                                //key: _formKey,
-                                child: Wrap(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(20),
-                                      child: TextFormField(
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: <TextInputFormatter>[
-                                          FilteringTextInputFormatter.digitsOnly
-                                        ],
-                                        controller: openDoorController,
-                                        decoration: const InputDecoration(
-                                            label: Text(
-                                              "Giá mở cửa",
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(10)))),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(20),
-                                      child: TextFormField(
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: <TextInputFormatter>[
-                                          FilteringTextInputFormatter.digitsOnly
-                                        ],
-                                        controller: under30kmController,
-                                        decoration: const InputDecoration(
-                                            label: Text(
-                                              "Giá dưới 30 km",
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(10)))),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(20),
-                                      child: TextFormField(
-                                        keyboardType: TextInputType.number,
-                                        inputFormatters: <TextInputFormatter>[
-                                          FilteringTextInputFormatter.digitsOnly
-                                        ],
-                                        controller: over30kmController,
-                                        decoration: const InputDecoration(
-                                            label: Text(
-                                              "Giá trên 30 km",
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(10)))),
-                                      ),
-                                    ),
+                            SizedBox(
+                              width: 600,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly
                                   ],
+                                  controller: openDoorController,
+                                  decoration: const InputDecoration(
+                                      label: Text(
+                                        "Giá mở cửa",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(10)))),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const DataCell(SizedBox())
+                        ],
+                      ),
+                      DataRow(
+                        cells: [
+                          DataCell(
+                            SizedBox(
+                              width: 600,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  controller: under30kmController,
+                                  decoration: const InputDecoration(
+                                      label: Text(
+                                        "Giá dưới 30 km",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(10)))),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const DataCell(SizedBox())
+                        ],
+                      ),
+                      DataRow(
+                        cells: [
+                          DataCell(
+                            SizedBox(
+                              width: 600,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly
+                                  ],
+                                  controller: over30kmController,
+                                  decoration: const InputDecoration(
+                                      label: Text(
+                                        "Giá từ 30 km trở lên",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(10)))),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const DataCell(SizedBox())
+                        ],
+                      ),
+                      DataRow(
+                        cells: [
+                          DataCell(
+                            SizedBox(
+                              width: 600,
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: TextFormField(
+                                  keyboardType: TextInputType.text,
+                                  controller: goongMapApiController,
+                                  decoration: const InputDecoration(
+                                      label: Text(
+                                        "Goong Map API",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(10)))),
                                 ),
                               ),
                             ),
@@ -209,89 +259,6 @@ class _OtherPageState extends State<OtherPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 200,
-                  ),
-                  SizedBox(
-                    width: 800,
-                    child: ListTile(
-                      leading: const Text(
-                        "API GOONG MAPS: ",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      title: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: TextFormField(
-                          keyboardType: TextInputType.text,
-                          controller: apiController,
-                          decoration: const InputDecoration(
-                              label: Text(
-                                "Key",
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10)))),
-                        ),
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: () async {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              shape: const RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(5))),
-                              title: const Text("Cập nhật thành công!",
-                                  style: TextStyle(fontSize: 20)),
-                              actions: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: MyColor.green,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(5))),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Text(
-                                      "XÁC NHẬN",
-                                      style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: MyColor.white),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                          await FirebaseDatabase(databaseURL: flutterURL)
-                              .ref()
-                              .child("apiKey")
-                              .child("goongMap")
-                              .update({
-                            "key": apiController.text,
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: MyColor.green,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5))),
-                        child: const Text(
-                          "CẬP NHẬT",
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: MyColor.white),
-                        ),
-                      ),
-                    ),
-                  )
                 ],
               ),
             ),

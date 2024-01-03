@@ -232,13 +232,20 @@ class _UserDataListState extends State<UserDataList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
-                    flex: 5,
-                    child: Text(
-                      "QUẢN LÝ KHÁCH HÀNG",
+                    flex: 6,
+                    child: ListTile(
+                      title: Text(
+                        "QUẢN LÝ KHÁCH HÀNG",
+                        style: TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "(Kéo sang phải để xem toàn bộ)",
+                      ),
                     ),
                   ),
                   Expanded(
-                    flex: 5,
+                    flex: 4,
                     child: ListTile(
                       leading: const Icon(Icons.search),
                       title: TextField(
@@ -304,13 +311,20 @@ class _UserDataListState extends State<UserDataList> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Expanded(
-                  flex: 5,
-                  child: Text(
-                    "QUẢN LÝ KHÁCH HÀNG",
+                  flex: 6,
+                  child: ListTile(
+                    title: Text(
+                      "QUẢN LÝ KHÁCH HÀNG",
+                      style:
+                          TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      "(Kéo sang phải để xem toàn bộ)",
+                    ),
                   ),
                 ),
                 Expanded(
-                  flex: 5,
+                  flex: 4,
                   child: ListTile(
                     leading: const Icon(Icons.search),
                     title: TextField(

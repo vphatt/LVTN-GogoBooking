@@ -16,6 +16,7 @@ class TripDataList extends StatefulWidget {
 class TripData extends DataTableSource {
   List dataList = [];
   int index;
+  double fontSize = 20;
 
   launchGoogleMapToViewTrip(startLat, startLng, endLat, endLng) async {
     String directionAPIUrl =
@@ -28,6 +29,338 @@ class TripData extends DataTableSource {
     }
   }
 
+  String actualDistanceMoved = "";
+  String distance = "";
+  double actualFareAmount = 0.0;
+  String carDetail = "";
+  String driverName = "";
+  String driverPhone = "";
+  String userName = "";
+  String userPhone = "";
+  String endAddress = "";
+  String comment = "";
+  double rateStar = 0.0;
+  String requestDateTime = "";
+  String startAddress = "";
+
+  showDetailTrip(String tripId) async {
+    DatabaseReference tripDetailRef =
+        // ignore: deprecated_member_use
+        FirebaseDatabase(databaseURL: flutterURL)
+            .ref()
+            .child("tripRequests")
+            .child(tripId);
+
+    await tripDetailRef.once().then((snap) {
+      actualDistanceMoved =
+          (snap.snapshot.value as Map)['actualDistanceMoved'].toString();
+      distance = (snap.snapshot.value as Map)['distance'].toString();
+      actualFareAmount = double.parse(
+          (snap.snapshot.value as Map)['actualFareAmount'].toString());
+      carDetail = (snap.snapshot.value as Map)['carDetail'].toString();
+
+      driverName = (snap.snapshot.value as Map)['driverName'].toString();
+      driverPhone = (snap.snapshot.value as Map)['driverPhone'].toString();
+      userName = (snap.snapshot.value as Map)['userName'].toString();
+      userPhone = (snap.snapshot.value as Map)['userPhone'].toString();
+      endAddress = (snap.snapshot.value as Map)['endAddress'].toString();
+      comment = (snap.snapshot.value as Map)['rating']['comment'].toString();
+      rateStar = double.parse(
+          (snap.snapshot.value as Map)['rating']['rateStar'].toString());
+      requestDateTime =
+          (snap.snapshot.value as Map)['requestDateTime'].toString();
+      startAddress = (snap.snapshot.value as Map)['startAddress'].toString();
+    });
+
+    showDialog(
+      barrierDismissible: false,
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        actions: [
+          ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MyColor.green,
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                    color: MyColor.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold),
+              ))
+        ],
+        surfaceTintColor: Colors.transparent,
+        content: SelectionArea(
+          child: Container(
+            height: 700,
+            width: 1000,
+            decoration: const BoxDecoration(
+              color: MyColor.white,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const ListTile(
+                    title: Text(
+                      "THÔNG TIN TÀI XẾ",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: MyColor.green,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Tên tài xế:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      driverName,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Số điện thoại tài xế:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      driverPhone,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Biển số xe:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      carDetail,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const Divider(),
+                  const ListTile(
+                    title: Text(
+                      "THÔNG TIN KHÁCH HÀNG",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: MyColor.green,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Tên khách hàng:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      userName,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Số điện thoại khách hàng:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      userPhone,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const Divider(),
+                  const ListTile(
+                    title: Text(
+                      "THÔNG TIN CHUYẾN XE",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: MyColor.green,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "ID chuyến:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      tripId,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Ngày yêu cầu:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      DateFormat("kk:mm - dd/MM/yyyy")
+                          .format(DateTime.parse(requestDateTime)),
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Điểm đón:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    visualDensity: const VisualDensity(vertical: 4),
+                    trailing: SizedBox(
+                      width: 700,
+                      child: SingleChildScrollView(
+                        child: Text(
+                          startAddress,
+                          softWrap: true,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                              fontSize: fontSize,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Điểm trả:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    visualDensity: const VisualDensity(vertical: 4),
+                    trailing: SizedBox(
+                      width: 700,
+                      child: SingleChildScrollView(
+                        child: Text(
+                          endAddress,
+                          softWrap: true,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                              fontSize: fontSize,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Khoảng cách:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      distance,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Quảng đường đã đi:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      actualDistanceMoved,
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Tổng tiền trả:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      "${formatVND.format(actualFareAmount)} VNĐ",
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
+                          color: MyColor.red),
+                    ),
+                  ),
+                  const Divider(),
+                  const ListTile(
+                    title: Text(
+                      "ĐÁNH GIÁ",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: MyColor.green,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Số sao: ",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    trailing: Text(
+                      "${rateStar.toString()} sao",
+                      style: TextStyle(
+                          fontSize: fontSize,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ListTile(
+                    title: Text(
+                      "Nhận xét:",
+                      style: TextStyle(fontSize: fontSize),
+                    ),
+                    visualDensity: const VisualDensity(vertical: 4),
+                    trailing: SizedBox(
+                      width: 700,
+                      child: SingleChildScrollView(
+                        child: Text(
+                          comment.isNotEmpty ? comment : "Không có nhận xét",
+                          softWrap: true,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                              fontSize: fontSize,
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   TripData(this.dataList, this.index);
   @override
   DataRow? getRow(int index) {
@@ -36,6 +369,7 @@ class TripData extends DataTableSource {
             DataCell(Text("")),
             DataCell(Text("")),
             DataCell(Text("Không có kết quả!")),
+            DataCell(Text("")),
             DataCell(Text("")),
             DataCell(Text("")),
             DataCell(Text("")),
@@ -72,19 +406,29 @@ class TripData extends DataTableSource {
                   width: 120,
                   child: Text(
                     dataList[index]["startAddress"].toString(),
-                    maxLines: 4,
-                    //overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ))),
               DataCell(SizedBox(
                   width: 130,
                   child: Text(
                     dataList[index]["endAddress"].toString(),
-                    maxLines: 4,
-                    //overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ))),
+              DataCell(SizedBox(child: Text("${dataList[index]["status"]}"))),
               DataCell(SizedBox(
                   child: Row(
                 children: [
+                  IconButton(
+                    onPressed: () {
+                      showDetailTrip(dataList[index]["tripId"].toString());
+                    },
+                    icon: const Icon(
+                      Icons.visibility,
+                      color: MyColor.black,
+                    ),
+                  ),
                   IconButton(
                     onPressed: () {
                       String startLat =
@@ -205,7 +549,7 @@ class _TripDataListState extends State<TripDataList> {
   TextEditingController searchController = TextEditingController();
   List searchResult = [];
 
-  final usersDataFromDatabase =
+  final tripDataFromDatabase =
       // ignore: deprecated_member_use
       FirebaseDatabase(databaseURL: flutterURL).ref().child("tripRequests");
 
@@ -213,7 +557,7 @@ class _TripDataListState extends State<TripDataList> {
   Widget build(BuildContext context) {
     return StreamBuilder(
         //onValue => khi dữ liệu mới đc thêm vào từ driver app, web sẽ tự động cập nhật mà ko cần reload
-        stream: usersDataFromDatabase.onValue,
+        stream: tripDataFromDatabase.onValue,
         builder: (context, snapshotData) {
           //Nếu có lỗi, thông báo ra màn hình
           if (snapshotData.hasError) {
@@ -236,13 +580,20 @@ class _TripDataListState extends State<TripDataList> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Expanded(
-                      flex: 5,
-                      child: Text(
-                        "QUẢN LÝ CHUYẾN",
+                      flex: 6,
+                      child: ListTile(
+                        title: Text(
+                          "QUẢN LÝ CHUYẾN XE",
+                          style: TextStyle(
+                              fontSize: 25, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          "(Kéo sang phải để xem toàn bộ)",
+                        ),
                       ),
                     ),
                     Expanded(
-                      flex: 5,
+                      flex: 4,
                       child: ListTile(
                         leading: const Icon(Icons.search),
                         title: TextField(
@@ -286,6 +637,9 @@ class _TripDataListState extends State<TripDataList> {
                       label: Text('ĐIỂM TRẢ',
                           style: TextStyle(fontWeight: FontWeight.bold))),
                   DataColumn(
+                      label: Text('TRẠNG THÁI',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(
                       label: Text('THAO TÁC',
                           style: TextStyle(fontWeight: FontWeight.bold))),
                 ],
@@ -303,14 +657,14 @@ class _TripDataListState extends State<TripDataList> {
             });
           });
 
-          for (var data in dataList) {
-            if (data["status"] != "ended") {
-              dataList.remove(data);
-            }
-          }
+          // for (var data in dataList) {
+          //   if (data["status"] != "ended") {
+          //     dataList.remove(data);
+          //   }
+          // }
 
           return PaginatedDataTable(
-              dataRowMaxHeight: 80,
+              dataRowMaxHeight: 50,
               dataRowMinHeight: 10,
               columnSpacing: 60,
               showFirstLastButtons: true,
@@ -319,13 +673,20 @@ class _TripDataListState extends State<TripDataList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
-                    flex: 5,
-                    child: Text(
-                      "QUẢN LÝ CHUYẾN",
+                    flex: 6,
+                    child: ListTile(
+                      title: Text(
+                        "QUẢN LÝ CHUYẾN XE",
+                        style: TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "(Kéo sang phải để xem toàn bộ)",
+                      ),
                     ),
                   ),
                   Expanded(
-                    flex: 5,
+                    flex: 4,
                     child: ListTile(
                       leading: const Icon(Icons.search),
                       title: TextField(
@@ -452,6 +813,9 @@ class _TripDataListState extends State<TripDataList> {
                         style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(
                     label: Text('ĐIỂM TRẢ',
+                        style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text('TRẠNG THÁI',
                         style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(
                     label: Text('THAO TÁC',

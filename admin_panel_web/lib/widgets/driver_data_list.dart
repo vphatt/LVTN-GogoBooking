@@ -30,6 +30,7 @@ class DriverData extends DataTableSource {
             DataCell(Text("")),
             DataCell(Text("")),
             DataCell(Text("")),
+            DataCell(Text("")),
           ])
         : DataRow(
             color: index % 2 == 0
@@ -37,22 +38,24 @@ class DriverData extends DataTableSource {
                 : const MaterialStatePropertyAll(MyColor.greyLight),
             cells: [
               DataCell(SizedBox(child: Text((index + 1).toString()))),
-              DataCell(SizedBox(
-                  width: 80,
+              DataCell(
+                SizedBox(
+                  width: 50,
+                  height: 50,
                   child: Image.network(
                     dataList[index]["avatar"].toString(),
                     fit: BoxFit.cover,
-                    width: 50,
-                    height: 50,
                     errorBuilder: (context, error, stackTrace) {
                       return const Text(
                         'Lỗi tải ảnh!',
                         style: TextStyle(fontStyle: FontStyle.italic),
                       );
                     },
-                  ))),
+                  ),
+                ),
+              ),
               DataCell(SizedBox(
-                  width: 130,
+                  width: 200,
                   child: Text(
                     dataList[index]["id"].toString(),
                     maxLines: 2,
@@ -65,14 +68,12 @@ class DriverData extends DataTableSource {
               DataCell(
                   SizedBox(child: Text(dataList[index]["email"].toString()))),
               DataCell(SizedBox(
-                  child: Text(
-                      "${dataList[index]["car_details"]["carModel"]}, ${dataList[index]["car_details"]["carColor"]}\n${dataList[index]["car_details"]["carNumber"]}"))),
+                  child: Text(dataList[index]["car_details"].toString()))),
               DataCell(
-                SizedBox(
-                    child: dataList[index]["incomes"] != null
-                        ? Text("${dataList[index]["incomes"]} VND")
-                        : const Text("0 VND")),
-              ),
+                  SizedBox(child: Text(dataList[index]["rating"].toString()))),
+              DataCell(SizedBox(
+                  child: Text(
+                      "${formatVND.format(dataList[index]["incomes"])} VND"))),
               DataCell(
                 SizedBox(
                     child: dataList[index]["blockStatus"] == "no"
@@ -217,7 +218,7 @@ class _DriverDataListState extends State<DriverDataList> {
   TextEditingController searchController = TextEditingController();
   List searchResult = [];
 
-  final usersDataFromDatabase =
+  final driversDataFromDatabase =
 
       // ignore: deprecated_member_use
       FirebaseDatabase(databaseURL: flutterURL).ref().child("drivers");
@@ -226,7 +227,7 @@ class _DriverDataListState extends State<DriverDataList> {
   Widget build(BuildContext context) {
     return StreamBuilder(
         //onValue => khi dữ liệu mới đc thêm vào từ driver app, web sẽ tự động cập nhật mà ko cần reload
-        stream: usersDataFromDatabase.onValue,
+        stream: driversDataFromDatabase.onValue,
         builder: (context, snapshotData) {
           //Nếu có lỗi, thông báo ra màn hình
           if (snapshotData.hasError) {
@@ -249,13 +250,20 @@ class _DriverDataListState extends State<DriverDataList> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Expanded(
-                      flex: 5,
-                      child: Text(
-                        "QUẢN LÝ TÀI XẾ",
+                      flex: 6,
+                      child: ListTile(
+                        title: Text(
+                          "QUẢN LÝ TÀI XẾ",
+                          style: TextStyle(
+                              fontSize: 25, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          "(Kéo sang phải để xem toàn bộ)",
+                        ),
                       ),
                     ),
                     Expanded(
-                      flex: 5,
+                      flex: 4,
                       child: ListTile(
                         leading: const Icon(Icons.search),
                         title: TextField(
@@ -297,6 +305,9 @@ class _DriverDataListState extends State<DriverDataList> {
                       label: Text('PHƯƠNG TIỆN',
                           style: TextStyle(fontWeight: FontWeight.bold))),
                   DataColumn(
+                      label: Text('ĐÁNH GIÁ',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(
                       label: Text('THU NHẬP',
                           style: TextStyle(fontWeight: FontWeight.bold))),
                   DataColumn(
@@ -327,13 +338,20 @@ class _DriverDataListState extends State<DriverDataList> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Expanded(
-                    flex: 5,
-                    child: Text(
-                      "QUẢN LÝ TÀI XẾ",
+                    flex: 6,
+                    child: ListTile(
+                      title: Text(
+                        "QUẢN LÝ TÀI XẾ",
+                        style: TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "(Kéo sang phải để xem toàn bộ)",
+                      ),
                     ),
                   ),
                   Expanded(
-                    flex: 5,
+                    flex: 4,
                     child: ListTile(
                       leading: const Icon(Icons.search),
                       title: TextField(
@@ -486,6 +504,9 @@ class _DriverDataListState extends State<DriverDataList> {
                         style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(
                     label: Text('PHƯƠNG TIỆN',
+                        style: TextStyle(fontWeight: FontWeight.bold))),
+                DataColumn(
+                    label: Text('ĐÁNH GIÁ',
                         style: TextStyle(fontWeight: FontWeight.bold))),
                 DataColumn(
                     label: Text('THU NHẬP',

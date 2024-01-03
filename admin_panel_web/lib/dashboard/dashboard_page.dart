@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DashboardPage extends StatefulWidget {
+  static const String id = "/";
   const DashboardPage({super.key});
 
   @override
