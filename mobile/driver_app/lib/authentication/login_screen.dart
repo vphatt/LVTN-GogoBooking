@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       cMethods.displaySnackbar("Vui lòng nhập đầy đủ thông tin", context);
-    } else if (!emailController.text.contains('@')) {
+    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(emailController.text)) {
       cMethods.displaySnackbar("Email không hợp lệ", context);
     } else if (passwordController.text.trim().length <= 5) {
       cMethods.displaySnackbar("Mật khẩu phải từ 6 kí tự trở lên", context);
@@ -60,7 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
     )
             // ignore: body_might_complete_normally_catch_error
             .catchError((errorMsg) {
-      cMethods.displaySnackbar(errorMsg.toString(), context);
+      if (errorMsg.code == "invalid-login-credentials") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Thông tin đăng nhập không hợp lệ!", context);
+      }
     }))
         .user;
 

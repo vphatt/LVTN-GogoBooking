@@ -13,7 +13,7 @@ class PaymentDialog extends StatefulWidget {
     required this.actualDistanceText,
   });
 
-  final String actualFareAmount;
+  final double actualFareAmount;
   final String userName;
   final String actualDistanceText;
 
@@ -90,11 +90,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   style: TextStyle(fontSize: 15),
                 ),
                 trailing: Text(
-                  "${formatVND.format(double.parse(widget.actualFareAmount))} đ",
+                  "${formatVND.format(widget.actualFareAmount)} đ",
                   style: const TextStyle(fontSize: 15),
                 ),
               ),
-              ListTile(
+              const ListTile(
                 title: Text(
                   "Phí phụ: ",
                   style: TextStyle(fontSize: 15),
@@ -104,7 +104,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   style: TextStyle(fontSize: 15),
                 ),
               ),
-              ListTile(
+              const ListTile(
                 title: Text(
                   "Khuyến mại: ",
                   style: TextStyle(fontSize: 15),
@@ -121,7 +121,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 trailing: Text(
-                  "${formatVND.format(double.parse(widget.actualFareAmount))} đ",
+                  "${formatVND.format(widget.actualFareAmount)} đ",
                   style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,

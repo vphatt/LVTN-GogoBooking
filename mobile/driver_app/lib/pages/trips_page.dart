@@ -1,4 +1,5 @@
 import 'package:driver_app/global/global_var.dart';
+import 'package:driver_app/pages/detail_trip_history_page.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -20,6 +21,9 @@ class _TripsPageState extends State<TripsPage> {
       FirebaseDatabase.instance.ref().child("tripRequests");
 
   List tripCompleted = [];
+
+  String requestDateTime = "";
+  double actualFareAmount = 0.0;
 
   //Lấy thông tin của những chuyến đã hoàn thành
   getInfoOfCompletedTrips() async {
@@ -82,131 +86,168 @@ class _TripsPageState extends State<TripsPage> {
     final screenSize = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-          body: Container(
-        height: double.infinity,
-        color: MyColor.green,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Container(
-                width: screenSize.width / 1.5,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                    color: MyColor.white,
-                    borderRadius: BorderRadius.circular(20)),
-                child: Column(
+        body: Container(
+          height: double.infinity,
+          color: MyColor.green,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  width: screenSize.width / 1.5,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                      color: MyColor.white,
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "Tổng thu nhập",
+                        style: TextStyle(color: MyColor.black),
+                      ),
+                      Text(
+                        "${formatVND.format(double.parse(driverIncome))} VNĐ",
+                        style: const TextStyle(
+                            color: MyColor.green,
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: screenSize.width / 20),
+                child: Row(
                   children: [
                     const Text(
-                      "Tổng thu nhập",
-                      style: TextStyle(color: MyColor.black),
+                      "Số chuyển đã hoàn thành: ",
+                      style: TextStyle(color: MyColor.white),
                     ),
                     Text(
-                      "${formatVND.format(double.parse(driverIncome))} VNĐ",
+                      number,
                       style: const TextStyle(
-                          color: MyColor.green,
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold),
-                    )
+                          color: MyColor.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width / 20),
-              child: Row(
-                children: [
-                  const Text(
-                    "Số chuyển đã hoàn thành: ",
-                    style: TextStyle(color: MyColor.white),
-                  ),
-                  Text(
-                    number,
-                    style: const TextStyle(
-                        color: MyColor.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20),
-                  ),
-                ],
+              const Divider(
+                color: MyColor.green,
+                indent: 30,
+                endIndent: 30,
               ),
-            ),
-            const Divider(
-              color: MyColor.green,
-              indent: 30,
-              endIndent: 30,
-            ),
-            Expanded(
+              Expanded(
                 child: StreamBuilder(
-              stream: tripCompletedRef.onValue,
-              builder: (BuildContext context, snapshotData) {
-                if (snapshotData.hasError) {
-                  return const Center(
-                    child: Text(
-                      "Có lỗi xảy ra!",
-                      style: TextStyle(color: MyColor.red),
-                    ),
-                  );
-                }
+                  stream: tripCompletedRef.onValue,
+                  builder: (BuildContext context, snapshotData) {
+                    if (snapshotData.hasError) {
+                      return const Center(
+                        child: Text(
+                          "Có lỗi xảy ra!",
+                          style: TextStyle(color: MyColor.red),
+                        ),
+                      );
+                    }
 
-                if (!(snapshotData.hasData)) {
-                  return const Center(
-                    child: Text(
-                      "Bạn chưa có hoạt động nào",
-                      style: TextStyle(color: MyColor.green),
-                    ),
-                  );
-                }
+                    if (!(snapshotData.hasData)) {
+                      return const Center(
+                        child: Text(
+                          "Bạn chưa có hoạt động nào",
+                          style: TextStyle(color: MyColor.green),
+                        ),
+                      );
+                    }
 
-                //Lấy toàn bộ dữ liệu chuyến đi
-                // Map dataTrips = snapshotData.data!.snapshot.value as Map;
-                // List dataTripsList = [];
-                // dataTrips.forEach((key, value) =>
-                //     dataTripsList.add({"key": key, ...dataTrips}));
-                return ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: tripCompleted.length,
-                    itemBuilder: ((context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        child: InkWell(
+                    if (snapshotData.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: MyColor.white,
+                        ),
+                      );
+                    }
+
+                    //Lấy toàn bộ dữ liệu chuyến đi
+                    // Map dataTrips = snapshotData.data!.snapshot.value as Map;
+                    // List dataTripsList = [];
+                    // dataTrips.forEach((key, value) =>
+                    //     dataTripsList.add({"key": key, ...dataTrips}));
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: tripCompleted.length,
+                      scrollDirection: Axis.vertical,
+                      itemBuilder: ((context, index) {
+                        if (tripCompleted.isNotEmpty) {
+                          requestDateTime = DateFormat("kk:mm - dd/MM/yyyy")
+                              .format(DateTime.parse(
+                                  tripCompleted[index]['requestDateTime']));
+
+                          actualFareAmount = double.parse(tripCompleted[index]
+                                  ['actualFareAmount']
+                              .toString());
+                        }
+                        return InkWell(
                           onTap: () {
-                            List detail = tripCompleted[index];
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (BuildContext context) =>
+                                    DetailTripHistoryScreen(
+                                        tripId: tripCompleted[index]['tripId']
+                                            .toString()),
+                              ),
+                            );
                           },
-                          child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Card(
                               elevation: 5,
                               surfaceTintColor: MyColor.grey,
-                              child: Wrap(
+                              child: Column(
                                 //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Flexible(
-                                    //flex: 3,
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: screenSize.width / 30,
-                                          vertical: screenSize.width / 50),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            DateFormat("kk:mm - dd/MM/yyyy")
-                                                .format(DateTime.parse(
-                                                    tripCompleted[index]
-                                                        ['requestDateTime'])),
-                                            style: const TextStyle(
-                                                color: MyColor.green,
-                                                fontWeight: FontWeight.bold),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: screenSize.width / 30,
+                                        vertical: screenSize.width / 50),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Card(
+                                          color: MyColor.green,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 5,
+                                            ),
+                                            child: Text(
+                                              "${tripCompleted[index]['rating']['rateStar']} ⭐",
+                                              style: const TextStyle(
+                                                  color: MyColor.yellow,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
                                           ),
-                                          Text(
-                                            "${formatVND.format(double.parse(tripCompleted[index]['actualFareAmount'].toString()))} đ",
-                                            style: const TextStyle(
-                                                color: MyColor.red,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                        Text(
+                                          requestDateTime,
+                                          style: const TextStyle(
+                                              color: MyColor.green,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        Text(
+                                          "${formatVND.format(actualFareAmount)} VNĐ",
+                                          style: const TextStyle(
+                                              color: MyColor.red,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
                                     ),
                                   ),
+
                                   Padding(
                                     padding: EdgeInsets.symmetric(
                                         horizontal: screenSize.width / 20),
@@ -277,15 +318,19 @@ class _TripsPageState extends State<TripsPage> {
                                   ),
                                   //Spacer(),
                                 ],
-                              )),
-                        ),
-                      );
-                    }));
-              },
-            )),
-          ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-      )),
+      ),
     );
   }
 }

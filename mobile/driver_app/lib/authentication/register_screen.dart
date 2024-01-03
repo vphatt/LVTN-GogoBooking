@@ -28,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController vehicleModelController = TextEditingController();
   final TextEditingController vehicleColorController = TextEditingController();
-  final TextEditingController vehicleNumberController = TextEditingController();
+  final TextEditingController carNumberController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmController = TextEditingController();
 
@@ -62,14 +62,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phoneController.text.trim().isEmpty ||
         vehicleModelController.text.trim().isEmpty ||
         vehicleColorController.text.trim().isEmpty ||
-        vehicleNumberController.text.trim().isEmpty ||
+        carNumberController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty ||
         confirmController.text.trim().isEmpty) {
       cMethods.displaySnackbar("Vui lòng nhập đầy đủ thông tin", context);
     } else if (usernameController.text.trim().length < 3) {
       cMethods.displaySnackbar(
           "Tên người dùng phải từ 4 kí tự trở lên", context);
-    } else if (!emailController.text.contains('@')) {
+    } else if (!RegExp(r'\S+@\S+\.\S+').hasMatch(emailController.text)) {
       cMethods.displaySnackbar("Email không hợp lệ", context);
     } else if (phoneController.text.trim().length < 9 ||
         phoneController.text.trim().length > 10) {
@@ -88,9 +88,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   //Tải hình ảnh lên kho lưu trữ
   uploadImagetoStorage() async {
-    String imageId = DateTime.now().millisecondsSinceEpoch.toString();
-    Reference referenceImage =
-        FirebaseStorage.instance.ref().child("Images").child(imageId);
+    String imageId = DateTime.now().toIso8601String();
+    Reference referenceImage = FirebaseStorage.instance
+        .ref()
+        .child("Images")
+        .child("DriverAvt")
+        .child(imageId);
 
     UploadTask uploadTask = referenceImage.putFile(File(imageFile!.path));
 
@@ -121,7 +124,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     )
             // ignore: body_might_complete_normally_catch_error
             .catchError((errorMsg) {
-      cMethods.displaySnackbar(errorMsg.toString(), context);
+      if (errorMsg.code == "email-already-in-use") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Email này đã tồn tại!", context);
+      } else if (errorMsg.code == "weak-password") {
+        Navigator.pop(context);
+        cMethods.displaySnackbar("Mật khẩu quá yếu!", context);
+      }
     }))
         .user;
 
@@ -134,19 +143,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         .child("drivers")
         .child(userFirebase!.uid);
 
-    Map driverCarInfo = {
-      "carModel": vehicleModelController.text.trim(),
-      "carColor": vehicleColorController.text.trim(),
-      "carNumber": vehicleNumberController.text.trim(),
-    };
+    // Map driverCarInfo = {
+    //   "carModel": vehicleModelController.text.trim(),
+    //   "carColor": vehicleColorController.text.trim(),
+    //   "carNumber": carNumberController.text.trim(),
+    // };
 
     Map driverDataMap = {
       "name": usernameController.text.trim(),
       "email": emailController.text.trim(),
       "phone": phoneController.text.trim(),
       "avatar": uploadImageURL,
-      "car_details": driverCarInfo,
+      "car_details": carNumberController.text.trim(),
       "id": userFirebase.uid,
+      "rating": 0.0,
+      "incomes": 0,
       "blockStatus": "no" //Tinh trang tai khoan co bi khoa hay khong
     };
     usersRef.set(driverDataMap); //lưu thông tin và database
@@ -331,56 +342,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
 
                     //Mau xe
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        controller: vehicleModelController,
-                        keyboardType: TextInputType.text,
-                        style: const TextStyle(fontSize: 20),
-                        decoration: const InputDecoration(
-                            hintText: 'Mẫu xe',
-                            filled: true,
-                            fillColor: MyColor.white,
-                            hintStyle: TextStyle(
-                              color: MyColor.grey,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(15),
-                              ),
-                            ),
-                            prefixIcon: Icon(FontAwesomeIcons.car)),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.all(8.0),
+                    //   child: TextField(
+                    //     controller: vehicleModelController,
+                    //     keyboardType: TextInputType.text,
+                    //     style: const TextStyle(fontSize: 20),
+                    //     decoration: const InputDecoration(
+                    //         hintText: 'Mẫu xe',
+                    //         filled: true,
+                    //         fillColor: MyColor.white,
+                    //         hintStyle: TextStyle(
+                    //           color: MyColor.grey,
+                    //         ),
+                    //         border: OutlineInputBorder(
+                    //           borderRadius: BorderRadius.all(
+                    //             Radius.circular(15),
+                    //           ),
+                    //         ),
+                    //         prefixIcon: Icon(FontAwesomeIcons.car)),
+                    //   ),
+                    // ),
 
                     //Mau xe
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        controller: vehicleColorController,
-                        keyboardType: TextInputType.text,
-                        style: const TextStyle(fontSize: 20),
-                        decoration: const InputDecoration(
-                            hintText: 'Màu xe',
-                            filled: true,
-                            fillColor: MyColor.white,
-                            hintStyle: TextStyle(
-                              color: MyColor.grey,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(15),
-                              ),
-                            ),
-                            prefixIcon: Icon(FontAwesomeIcons.palette)),
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.all(8.0),
+                    //   child: TextField(
+                    //     controller: vehicleColorController,
+                    //     keyboardType: TextInputType.text,
+                    //     style: const TextStyle(fontSize: 20),
+                    //     decoration: const InputDecoration(
+                    //         hintText: 'Màu xe',
+                    //         filled: true,
+                    //         fillColor: MyColor.white,
+                    //         hintStyle: TextStyle(
+                    //           color: MyColor.grey,
+                    //         ),
+                    //         border: OutlineInputBorder(
+                    //           borderRadius: BorderRadius.all(
+                    //             Radius.circular(15),
+                    //           ),
+                    //         ),
+                    //         prefixIcon: Icon(FontAwesomeIcons.palette)),
+                    //   ),
+                    // ),
 
                     //So xe
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
-                        controller: vehicleNumberController,
+                        controller: carNumberController,
                         keyboardType: TextInputType.text,
                         style: const TextStyle(fontSize: 20),
                         decoration: const InputDecoration(

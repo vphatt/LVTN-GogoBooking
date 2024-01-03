@@ -34,10 +34,6 @@ class SplashController extends GetxController {
           await Permission.storage.request().isGranted &&
           await Permission.location.request().isGranted &&
           await Permission.phone.request().isGranted) {
-        //Thong bao
-        // MyNotification.getFcmToken();
-        // MyNotification.getMessageInBackground();
-        // MyNotification.getMessageInForeground(context);
         //Chạy man hinh
         _launchScreen(context);
       } else {

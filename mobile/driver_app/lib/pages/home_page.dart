@@ -42,6 +42,118 @@ class _HomePageState extends State<HomePage> {
 
   GlobalKey<ScaffoldState> gbKey = GlobalKey<ScaffoldState>();
 
+  //Lấy email tài xế, lấy trực tiếp từ account ko lấy từ database
+  getEmailDriver() async {
+    DatabaseReference userRef = FirebaseDatabase.instance
+        .ref()
+        .child("drivers")
+        .child(FirebaseAuth.instance.currentUser!.uid);
+
+    await userRef.update({
+      "email": FirebaseAuth.instance.currentUser!.email,
+    });
+
+    setState(() {
+      driverEmail = FirebaseAuth.instance.currentUser!.email!;
+    });
+  }
+
+  //lay thong tin gia cuoc
+  getFareTrip() async {
+    DatabaseReference fareTripRef =
+        FirebaseDatabase.instance.ref().child("fareTrip");
+
+    await fareTripRef.once().then((snap) {
+      setState(() {
+        openDoorAmount =
+            double.parse((snap.snapshot.value! as Map)["openDoor"].toString());
+        distancePerKmUnder30Amount =
+            double.parse((snap.snapshot.value! as Map)["under30km"].toString());
+        distancePerKmOver30Amount =
+            double.parse((snap.snapshot.value! as Map)["over30km"].toString());
+      });
+    });
+  }
+
+  getGoongMapAPI() async {
+    DatabaseReference apiRef =
+        FirebaseDatabase.instance.ref().child("apiKey").child("goongMap");
+
+    await apiRef.once().then((snap) {
+      setState(() {
+        goongMapKey = (snap.snapshot.value! as Map)["key"].toString();
+      });
+    });
+  }
+
+  //Cập nhật tổng doanh thu của tài xế
+  List tripCompleted = [];
+  //double fare = 0;
+  updateIncomeAndPointToDriver() async {
+    double driverIncome = 0;
+    double driverPoint = 0;
+    double sum = 0;
+    //Lấy toan bo chuyen da hoan thanh
+    DatabaseReference tripRequestRef =
+        FirebaseDatabase.instance.ref().child("tripRequests");
+    //Lấy tổng số chuyến được yêu cầu, tại đây lấy cả chuyến của tài xế khác
+    await tripRequestRef.once().then(
+      (snap) async {
+        if (snap.snapshot.value != null) {
+          Map allTripMap = snap.snapshot.value as Map;
+
+          // int allTripNumber = allTripMap.length;
+
+          //Lọc ra những chuyến đã hoàn thành của tài xế hiện tại
+          List completedTripsOfCurrentDriver = [];
+
+          allTripMap.forEach((key, value) {
+            if (value["status"] != "initial" &&
+                value["status"] == "ended" &&
+                value["driverId"] == FirebaseAuth.instance.currentUser!.uid &&
+                value["rating"]["rateStar"] != 0) {
+              completedTripsOfCurrentDriver.add({"key": key, ...value});
+            }
+          });
+
+          setState(() {
+            tripCompleted = completedTripsOfCurrentDriver;
+          });
+        }
+      },
+    );
+
+    if (tripCompleted.isNotEmpty) {
+      for (var element in tripCompleted) {
+        driverIncome =
+            driverIncome + double.parse(element["actualFareAmount"].toString());
+
+        sum = sum + double.parse(element["rating"]["rateStar"].toString());
+      }
+
+      driverPoint = sum / tripCompleted.length;
+
+      setState(() {
+        driverRate = driverPoint.toStringAsFixed(1);
+      });
+
+      //Cập nhật doanh thu
+      FirebaseDatabase.instance
+          .ref()
+          .child("drivers")
+          .child(FirebaseAuth.instance.currentUser!.uid)
+          .child("incomes")
+          .set(driverIncome);
+
+      FirebaseDatabase.instance
+          .ref()
+          .child("drivers")
+          .child(FirebaseAuth.instance.currentUser!.uid)
+          .child("rating")
+          .set(driverPoint.toStringAsFixed(1));
+    }
+  }
+
   //Lay vi tri hien tai cua tai xe
   getCurrentLocationDriver() async {
     Position positionOfDriver = await Geolocator.getCurrentPosition(
@@ -178,9 +290,7 @@ class _HomePageState extends State<HomePage> {
         driverPhone = (snap.snapshot.value as Map)["phone"];
         driverAvt = (snap.snapshot.value as Map)["avatar"];
         driverEmail = (snap.snapshot.value as Map)["email"];
-        carColor = (snap.snapshot.value as Map)["car_details"]["carColor"];
-        carModel = (snap.snapshot.value as Map)["car_details"]["carModel"];
-        carNumber = (snap.snapshot.value as Map)["car_details"]["carNumber"];
+        carNumber = (snap.snapshot.value as Map)["car_details"];
       },
     );
 
@@ -191,6 +301,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     retrieveCurrentDriverInfo();
+    getEmailDriver();
+    getFareTrip();
+    getGoongMapAPI();
+    updateIncomeAndPointToDriver();
   }
 
   @override

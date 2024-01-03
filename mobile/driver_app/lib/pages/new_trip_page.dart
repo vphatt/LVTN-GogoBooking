@@ -43,7 +43,7 @@ class _NewTripPageState extends State<NewTripPage> {
 
   String durationText = "";
   String distanceText = "";
-  String actualFareAmountText = "";
+  double actualFareAmountValue = 0.0;
   String buttonTripTitle = "ĐÃ ĐÓN";
   Color startTripColor = MyColor.green;
 
@@ -54,13 +54,6 @@ class _NewTripPageState extends State<NewTripPage> {
     super.initState();
 
     polylineLatLngList.clear();
-
-    //Gán icon car
-    // BitmapDescriptor.fromAssetImage(
-    //         const ImageConfiguration(), 'assets/images/car_icon2.png')
-    //     .then((value) {
-    //   carMark = value;
-    // });
 
     //Gán icon điểm cuối
     BitmapDescriptor.fromAssetImage(
@@ -94,7 +87,8 @@ class _NewTripPageState extends State<NewTripPage> {
       "driverName": driverName,
       "driverPhone": driverPhone,
       "driverAvt": driverAvt,
-      "carDetail": "$carModel - $carColor - $carNumber",
+      "carDetail": carNumber,
+      "driverPoint": driverRate,
     };
 
     Map<String, dynamic> driverCurrentLocation = {
@@ -202,15 +196,6 @@ class _NewTripPageState extends State<NewTripPage> {
       CameraUpdate.newLatLngBounds(latLngBounds, 80),
     );
 
-    //gán icon cho vị trí của driver và điểm đón
-    // Marker driverMarker = Marker(
-    //   markerId: const MarkerId("driverMarkerId"),
-    //   position: LatLng(pointLatLngList.first.latitude,
-    //       pointLatLngList.first.longitude), //driverLatLng,
-    //   icon: driverMark!,
-    //   infoWindow: const InfoWindow(title: "Vị trí của bạn"),
-    // );
-
     if (endLocationLatLng != widget.newTripDetailInfo!.endLatLng!) {
       Marker startMarker = Marker(
         markerId: const MarkerId("startMarkerId"),
@@ -221,7 +206,6 @@ class _NewTripPageState extends State<NewTripPage> {
       );
 
       setState(() {
-        //markerSet.add(driverMarker);
         markerSet.add(startMarker);
       });
     } else {
@@ -292,6 +276,8 @@ class _NewTripPageState extends State<NewTripPage> {
 
   //Cập nhật thông tin chuyến đi
   updateTripInformation() async {
+    directionRequest = false;
+
     if (!directionRequest) {
       directionRequest = true;
 
@@ -329,7 +315,6 @@ class _NewTripPageState extends State<NewTripPage> {
       //Tính số tiền thật sự mà khách hàng phải trả dựa trên quãng đường đã đi
       //Vì khách hàng có thể yêu cầu dừng xe trước khi đến điểm trả
       //Nên số tiền thật sự có thể ít hơn số tiền dự tính ban đầu
-
       if (statusOfTrip == "onTrip") {
         var directionDetailEndTripInfo =
             await CommonMethods.getDirectionDetailFromAPI(
@@ -337,12 +322,11 @@ class _NewTripPageState extends State<NewTripPage> {
           driverLocationLatLng,
         );
 
-        String actualFareAmount =
-            (cMethod.calculateFareAmount(directionDetailEndTripInfo!))
-                .toString();
+        double actualFareAmount =
+            cMethod.calculateFareAmount(directionDetailEndTripInfo!);
 
         setState(() {
-          actualFareAmountText = actualFareAmount;
+          actualFareAmountValue = actualFareAmount;
         });
       }
     }
@@ -362,7 +346,7 @@ class _NewTripPageState extends State<NewTripPage> {
         .child("tripRequests")
         .child(widget.newTripDetailInfo!.tripId!)
         .child("actualFareAmount")
-        .set(actualFareAmountText);
+        .set(actualFareAmountValue);
 
     //Cập nhật quảng đường thực tế đã di chuyển
     FirebaseDatabase.instance
@@ -387,9 +371,6 @@ class _NewTripPageState extends State<NewTripPage> {
 
     //hiện bảng thanh toán
     showPaymentDialog();
-
-    //Cập nhật tổng doanh thu của tài xế
-    updateFareAmountToDriverIncome(actualFareAmountText);
   }
 
   showPaymentDialog() {
@@ -397,37 +378,10 @@ class _NewTripPageState extends State<NewTripPage> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) => PaymentDialog(
-              actualFareAmount: actualFareAmountText,
+              actualFareAmount: actualFareAmountValue,
               userName: widget.newTripDetailInfo!.userName!,
               actualDistanceText: distanceText,
             ));
-  }
-
-  //Cập nhật tổng doanh thu của tài xế
-  updateFareAmountToDriverIncome(String actualFareAmount) async {
-    DatabaseReference driverIncomeRef = FirebaseDatabase.instance
-        .ref()
-        .child("drivers")
-        .child(FirebaseAuth.instance.currentUser!.uid)
-        .child("incomes");
-
-    //Cộng dồn thu nhập mới vào thu nhập hiện có
-    await driverIncomeRef.once().then((snap) {
-      //Nếu không phải là chuyến xe đầu tiên (không phải tài xế mới)
-      if (snap.snapshot.value != null) {
-        double currentIncome = double.parse(snap.snapshot.value.toString());
-        double lastestTripIncome = double.parse(actualFareAmount);
-
-        double newTotalIncome = currentIncome + lastestTripIncome;
-
-        driverIncomeRef.set(newTotalIncome);
-      }
-
-      //Nếu là tài xế mới (chưa có chuyến xe nào)
-      else {
-        driverIncomeRef.set(actualFareAmount);
-      }
-    });
   }
 
   @override
@@ -563,8 +517,8 @@ class _NewTripPageState extends State<NewTripPage> {
                           ),
                           const Spacer(),
                           Text(
-                            actualFareAmountText != ""
-                                ? "${formatVND.format(double.parse(actualFareAmountText))} đ"
+                            actualFareAmountValue != 0.0
+                                ? "${formatVND.format(actualFareAmountValue)} đ"
                                 : "Chưa tính",
                             style: TextStyle(
                               color: MyColor.red,

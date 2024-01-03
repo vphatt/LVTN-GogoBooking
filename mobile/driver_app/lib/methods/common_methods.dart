@@ -10,7 +10,6 @@ import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
 class CommonMethods {
   //Kiểm tra internet của thiết bị, để xem thiết bị có kết nối
@@ -110,12 +109,18 @@ class CommonMethods {
     }
   }
 
+// DatabaseReference fareTripRef =
+//         FirebaseDatabase.instance.ref().child("fareTrip");
   //Tính tiền xe
   calculateFareAmount(DirectionModel directionModel) {
-    double distancePerKmUnder30Amount =
-        11000; //Giá xe khi quãng đường dưới 30km
-    double openDoorAmount = 9000; //Giá mở cửa
-    double distancePerKmOver30Amount = 9500; //Giá xe khi quãng đường trên 30km
+    // fareTripRef.once().then((snap) {
+    //   openDoorAmount =
+    //       double.parse((snap.snapshot.value! as Map)["openDoor"].toString());
+    //   distancePerKmUnder30Amount =
+    //       double.parse((snap.snapshot.value! as Map)["under30km"].toString());
+    //   distancePerKmOver30Amount =
+    //       double.parse((snap.snapshot.value! as Map)["over30km"].toString());
+    // });
 
     double fareAmount = 0;
     if ((directionModel.distanceValue! / 1000) <= 1) {
@@ -128,7 +133,7 @@ class CommonMethods {
       fareAmount = (30 * distancePerKmUnder30Amount) +
           ((directionModel.distanceValue! / 1000) * distancePerKmOver30Amount);
     }
-    final format = NumberFormat("#########");
-    return format.format(fareAmount);
+
+    return fareAmount;
   }
 }

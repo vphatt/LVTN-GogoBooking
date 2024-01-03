@@ -1,5 +1,6 @@
 import 'package:driver_app/authentication/login_screen.dart';
 import 'package:driver_app/global/global_var.dart';
+import 'package:driver_app/pages/edit_profile.page.dart';
 import 'package:driver_app/utils/my_color.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -50,11 +51,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                   borderRadius: BorderRadius.circular(5),
                                 ),
                                 color: MyColor.green,
-                                child: const Padding(
-                                  padding: EdgeInsets.all(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
                                   child: Text(
-                                    "4.9 ⭐",
-                                    style: TextStyle(color: MyColor.yellow),
+                                    "$driverRate ⭐",
+                                    style: const TextStyle(
+                                        color: MyColor.yellow,
+                                        fontWeight: FontWeight.bold),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
@@ -77,34 +80,45 @@ class _ProfilePageState extends State<ProfilePage> {
                       leading: const Icon(Icons.phone),
                     ),
                     ListTile(
-                      title: Text("$carModel - $carColor - $carNumber"),
+                      title: Text(carNumber),
                       leading: const Icon(Icons.local_taxi_outlined),
                     ),
                   ],
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(left: 15, right: 15, bottom: 15),
+            // const Padding(
+            //   padding: EdgeInsets.only(left: 15, right: 15, bottom: 15),
+            //   child: Card(
+            //     elevation: 5,
+            //     surfaceTintColor: MyColor.black,
+            //     child: ListTile(
+            //       title: Text("Đánh giá của khách hàng"),
+            //       leading: Icon(Icons.comment),
+            //       trailing: Icon(Icons.keyboard_arrow_right),
+            //     ),
+            //   ),
+            // ),
+            Padding(
+              padding: const EdgeInsets.only(left: 15, right: 15, bottom: 15),
               child: Card(
                 elevation: 5,
                 surfaceTintColor: MyColor.black,
-                child: ListTile(
-                  title: Text("Đánh giá của khách hàng"),
-                  leading: Icon(Icons.comment),
-                  trailing: Icon(Icons.keyboard_arrow_right),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(left: 15, right: 15, bottom: 15),
-              child: Card(
-                elevation: 5,
-                surfaceTintColor: MyColor.black,
-                child: ListTile(
-                  title: Text("Chỉnh sửa thông tin cá nhân"),
-                  leading: Icon(Icons.edit),
-                  trailing: Icon(Icons.keyboard_arrow_right),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (BuildContext context) =>
+                                const EditProfileScreen())).then((_) {
+                      setState(() {});
+                    });
+                  },
+                  child: const ListTile(
+                    title: Text("Chỉnh sửa thông tin cá nhân"),
+                    leading: Icon(Icons.edit),
+                    trailing: Icon(Icons.keyboard_arrow_right),
+                  ),
                 ),
               ),
             ),

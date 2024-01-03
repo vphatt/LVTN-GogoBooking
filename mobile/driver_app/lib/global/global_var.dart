@@ -17,8 +17,8 @@ String googleMapKey = "AIzaSyBBe_0Hm2yhj1kjBr1swX8l51hQgI4r6PQ";
 
 //Goong Maps API KEY
 //Sử dụng cho việc lấy vị trí, vẽ đường, tính khoảng cách, tìm kiếm địa điểm,...
-String goongMapKey =
-    "eQJSWRSq3Cqe3Q5ZDaEzRqGf2dm7NohpKVzyytEb"; //"ciMkBVsvm2gHKuNxcvVRI1EGpQyi8KkbcikBSix7"; // "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
+String goongMapKey = "";
+//"eQJSWRSq3Cqe3Q5ZDaEzRqGf2dm7NohpKVzyytEb"; //"ciMkBVsvm2gHKuNxcvVRI1EGpQyi8KkbcikBSix7"; // "H6kU854UuaIgC8OnW0Dh8K2cVGjl9PbQEUPpjWQr";
 
 //Dùng cho cập nhật vị trí tài xế theo thời gian thực
 StreamSubscription<Position>? positionStreamHomePage;
@@ -42,8 +42,16 @@ String driverName = "";
 String driverEmail = "";
 String driverPhone = "";
 String driverAvt = "";
-String carColor = "";
-String carModel = "";
 String carNumber = "";
+String driverRate = "";
 
 final formatVND = NumberFormat("###,###,###");
+
+//Giá xe khi quãng đường dưới 30km
+double distancePerKmUnder30Amount = 0;
+
+//Giá mở cửa
+double openDoorAmount = 0;
+
+//Giá xe khi quãng đường trên 30km
+double distancePerKmOver30Amount = 0;
